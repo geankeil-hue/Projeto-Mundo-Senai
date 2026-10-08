@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cadastro de Caminhoneiro | Frete Conecta</title>
+
+    <style>
+
+        /* ==============================
+           CONFIGURAÇÕES GERAIS
+        ============================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            min-height: 100vh;
+            color: #ffffff;
+
+            background:
+                linear-gradient(
+                    rgba(5, 29, 53, 0.90),
+                    rgba(5, 29, 53, 0.96)
+                ),
+                url("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=1600&auto=format&fit=crop");
+
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+
+        /* ==============================
+           NAVBAR
+        ============================== */
+
+        .navbar {
+            width: 100%;
+            padding: 18px 5%;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            font-size: 30px;
+            font-weight: bold;
+            color: white;
+
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+
+            border-radius: 50%;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #b9df32,
+                    #ff8a00 45%,
+                    #ff5c00
+                );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 0;
+            position: relative;
+        }
+
+        .logo-icon::before {
+            content: "";
+            position: absolute;
+
+            width: 13px;
+            height: 7px;
+
+            background: #b9df32;
+
+            border-radius: 100% 0 100% 0;
+
+            top: -4px;
+            left: 5px;
+
+            transform: rotate(25deg);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 34px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+
+            font-size: 18px;
+
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #ff7200;
+        }
+
+        .btn-conta {
+            background: #ff7000;
+
+            color: white !important;
+
+            padding: 14px 25px;
+
+            border-radius: 12px;
+
+            font-weight: bold;
+
+            transition: 0.3s;
+        }
+
+        .btn-conta:hover {
+            background: #ff8a25;
+
+            transform: translateY(-2px);
+        }
+
+
+        /* ==============================
+           CONTAINER
+        ============================== */
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+
+            margin: 25px auto 60px;
+
+            padding: 0 20px;
+        }
+
+
+        /* ==============================
+           CARD DE CADASTRO
+        ============================== */
+
+        .cadastro-card {
+            background: #f7f9fc;
+
+            color: #112844;
+
+            border-radius: 18px;
+
+            padding: 42px 40px;
+
+            box-shadow:
+                0 25px 70px rgba(0, 0, 0, 0.35);
+
+            animation: aparecer 0.6s ease;
+        }
+
+        @keyframes aparecer {
+
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        }
+
+
+        /* ==============================
+           CABEÇALHO
+        ============================== */
+
+        .linha-laranja {
+            width: 48px;
+            height: 5px;
+
+            background: #ff7000;
+
+            border-radius: 20px;
+
+            margin-bottom: 15px;
+        }
+
+        .cadastro-card h1 {
+            font-size: 42px;
+
+            line-height: 1.1;
+
+            margin-bottom: 10px;
+
+            color: #0c2038;
+        }
+
+        .subtitulo {
+            color: #71839a;
+
+            font-size: 17px;
+
+            line-height: 1.5;
+
+            margin-bottom: 30px;
+
+            max-width: 650px;
+        }
+
+
+        /* ==============================
+           GRID DOS CAMPOS
+        ============================== */
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 22px;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .campo-completo {
+            grid-column: 1 / -1;
+        }
+
+        .campo label {
+            color: #142b48;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            margin-bottom: 9px;
+        }
+
+        .obrigatorio {
+            color: #ff6500;
+        }
+
+        .campo input[type="text"],
+        .campo input[type="email"] {
+            width: 100%;
+
+            height: 50px;
+
+            padding: 0 16px;
+
+            border: 1px solid #cbd7e5;
+
+            border-radius: 9px;
+
+            background: white;
+
+            color: #172b45;
+
+            font-size: 15px;
+
+            font-family: Georgia, 'Times New Roman', serif;
+
+            outline: none;
+
+            transition: 0.25s;
+        }
+
+        .campo input:focus {
+            border-color: #ff7000;
+
+            box-shadow:
+                0 0 0 3px rgba(255, 112, 0, 0.10);
+        }
+
+
+        /* ==============================
+           ÁREA DE UPLOAD
+        ============================== */
+
+        .upload-box {
+            min-height: 115px;
+
+            border: 1.5px dashed #aebfd2;
+
+            border-radius: 10px;
+
+            background: #fbfdff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            text-align: center;
+
+            padding: 20px;
+
+            cursor: pointer;
+
+            transition: 0.3s;
+        }
+
+        .upload-box:hover {
+            border-color: #ff7000;
+
+            background: #fff9f4;
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 30px;
+
+            margin-bottom: 7px;
+        }
+
+        .upload-text {
+            color: #284768;
+
+            font-size: 15px;
+        }
+
+        .upload-info {
+            display: block;
+
+            color: #8495a9;
+
+            font-size: 12px;
+
+            margin-top: 5px;
+        }
+
+        .arquivo-selecionado {
+            color: #15945d;
+
+            font-weight: bold;
+
+            margin-top: 7px;
+
+            font-size: 13px;
+        }
+
+
+        /* ==============================
+           FOTO DO CAMINHONEIRO
+        ============================== */
+
+        .foto-area {
+            display: flex;
+
+            align-items: center;
+
+            gap: 22px;
+        }
+
+        .foto-preview {
+            width: 105px;
+            height: 105px;
+
+            border-radius: 50%;
+
+            background: #e4ebf3;
+
+            border: 3px solid #d2dce7;
+
+            overflow: hidden;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            flex-shrink: 0;
+        }
+
+        .foto-preview span {
+            font-size: 42px;
+        }
+
+        .foto-preview img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            display: none;
+        }
+
+        .foto-upload {
+            flex: 1;
+        }
+
+        .foto-explicacao {
+            max-width: 180px;
+
+            color: #778ba2;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+
+        /* ==============================
+           CARGAS
+        ============================== */
+
+        .cargas-section {
+            margin-top: 30px;
+
+            padding: 22px;
+
+            border-radius: 12px;
+
+            background: #edf4fa;
+        }
+
+        .cargas-titulo {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            color: #102b49;
+
+            font-size: 19px;
+
+            font-weight: bold;
+
+            margin-bottom: 6px;
+        }
+
+        .cargas-descricao {
+            color: #6f849a;
+
+            font-size: 13px;
+
+            margin-bottom: 18px;
+        }
+
+        .cargas-grid {
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 12px;
+        }
+
+        .carga {
+            background: white;
+
+            border: 1px solid #cbd8e6;
+
+            border-radius: 9px;
+
+            padding: 15px;
+
+            cursor: pointer;
+
+            transition: 0.25s;
+        }
+
+        .carga:hover {
+            border-color: #ff7000;
+
+            transform: translateY(-2px);
+        }
+
+        .carga input {
+            accent-color: #ff7000;
+
+            margin-right: 7px;
+        }
+
+        .carga strong {
+            color: #203c5b;
+
+            font-size: 14px;
+        }
+
+        .carga small {
+            display: block;
+
+            margin-top: 5px;
+
+            margin-left: 23px;
+
+            color: #8092a7;
+
+            font-size: 11px;
+        }
+
+
+        /* ==============================
+           BOTÃO
+        ============================== */
+
+        .btn-cadastro {
+            width: 100%;
+
+            height: 58px;
+
+            margin-top: 28px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: #ff7000;
+
+            color: white;
+
+            font-family: Georgia, 'Times New Roman', serif;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.3s;
+        }
+
+        .btn-cadastro:hover {
+            background: #ff831f;
+
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 8px 20px rgba(255, 112, 0, 0.25);
+        }
+
+
+        /* ==============================
+           LOGIN
+        ============================== */
+
+        .login {
+            text-align: center;
+
+            margin-top: 17px;
+
+            color: #344e69;
+
+            font-size: 14px;
+        }
+
+        .login a {
+            color: #ff6500;
+
+            font-weight: bold;
+
+            text-decoration: none;
+        }
+
+        .login a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* ==============================
+           SEGURANÇA
+        ============================== */
+
+        .seguranca {
+            border-top: 1px solid #d9e2ec;
+
+            margin-top: 25px;
+
+            padding-top: 20px;
+
+            display: flex;
+
+            justify-content: center;
+
+            gap: 70px;
+        }
+
+        .seguranca-item {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            color: #478467;
+
+            font-size: 13px;
+        }
+
+        .seguranca-icon {
+            font-size: 24px;
+        }
+
+        .seguranca-item strong {
+            display: block;
+
+            color: #3c755d;
+        }
+
+        .seguranca-item span {
+            color: #789083;
+
+            font-size: 11px;
+        }
+
+
+        /* ==============================
+           MENSAGEM
+        ============================== */
+
+        .mensagem {
+            display: none;
+
+            margin-top: 18px;
+
+            padding: 14px;
+
+            border-radius: 8px;
+
+            text-align: center;
+
+            background: #e7f8ef;
+
+            color: #177348;
+
+            font-size: 14px;
+
+            font-weight: bold;
+        }
+
+
+        /* ==============================
+           RESPONSIVIDADE
+        ============================== */
+
+        @media (max-width: 1000px) {
+
+            .navbar {
+                padding: 18px 25px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .nav-links a {
+                font-size: 15px;
+            }
+
+        }
+
+
+        @media (max-width: 750px) {
+
+            .navbar {
+                flex-direction: column;
+
+                gap: 20px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+
+                justify-content: center;
+            }
+
+            .container {
+                margin-top: 10px;
+            }
+
+            .cadastro-card {
+                padding: 30px 22px;
+            }
+
+            .cadastro-card h1 {
+                font-size: 32px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .campo-completo {
+                grid-column: auto;
+            }
+
+            .cargas-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .seguranca {
+                flex-direction: column;
+
+                gap: 15px;
+
+                align-items: center;
+            }
+
+        }
+
+
+        @media (max-width: 500px) {
+
+            .logo {
+                font-size: 25px;
+            }
+
+            .nav-links a:not(.btn-conta) {
+                display: none;
+            }
+
+            .cadastro-card h1 {
+                font-size: 28px;
+            }
+
+            .foto-area {
+                flex-direction: column;
+
+                align-items: stretch;
+            }
+
+            .foto-preview {
+                margin: auto;
+            }
+
+            .foto-explicacao {
+                max-width: none;
+
+                text-align: center;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- ==============================
+         NAVBAR
+    ============================== -->
+
+    <header class="navbar">
+
+        <a href="index.html" class="logo">
+
+            <div class="logo-icon"></div>
+
+            Frete Conecta
+
+        </a>
+
+
+        <nav class="nav-links">
+
+            <a href="caminhoneiros.html">
+                Para caminhoneiros
+            </a>
+
+            <a href="embarcadores.html">
+                Para embarcadores
+            </a>
+
+            <a href="#como-funciona">
+                Como funciona
+            </a>
+
+            <a href="#seguranca">
+                Segurança
+            </a>
+
+            <a href="login.html">
+                Entrar
+            </a>
+
+            <a href="cadastro-caminhoneiro.html"
+               class="btn-conta">
+
+                Criar conta →
+
+            </a>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- ==============================
+         CONTEÚDO
+    ============================== -->
+
+    <main class="container">
+
+
+        <section class="cadastro-card">
+
+
+            <!-- TÍTULO -->
+
+            <div class="linha-laranja"></div>
+
+            <h1>
+                Cadastro de caminhoneiro
+            </h1>
+
+            <p class="subtitulo">
+                Seus dados serão verificados para garantir mais
+                segurança para você e para toda a plataforma.
+            </p>
+
+
+
+            <!-- ==============================
+                 FORMULÁRIO
+            ============================== -->
+
+            <form id="cadastroForm">
+
+
+                <div class="form-grid">
+
+
+                    <!-- NOME -->
+
+                    <div class="campo">
+
+                        <label for="nome">
+                            Nome completo
+                            <span class="obrigatorio">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="nome"
+                            name="nome"
+                            placeholder="Digite seu nome completo"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- CPF -->
+
+                    <div class="campo">
+
+                        <label for="cpf">
+                            CPF
+                            <span class="obrigatorio">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="cpf"
+                            name="cpf"
+                            placeholder="000.000.000-00"
+                            maxlength="14"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- CNH -->
+
+                    <div class="campo">
+
+                        <label>
+                            Carteira de motorista (CNH)
+                            <span class="obrigatorio">*</span>
+                        </label>
+
+                        <label class="upload-box">
+
+                            <input
+                                type="file"
+                                id="cnh"
+                                name="cnh"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                required
+                            >
+
+                            <div>
+
+                                <div class="upload-icon">
+                                    📄
+                                </div>
+
+                                <div class="upload-text">
+                                    Clique para enviar ou arraste o arquivo
+                                </div>
+
+                                <span class="upload-info">
+                                    PDF, JPG ou PNG · Máx. 10MB
+                                </span>
+
+                                <div
+                                    class="arquivo-selecionado"
+                                    id="nomeCNH">
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+
+
+                    <!-- ANTECEDENTES -->
+
+                    <div class="campo">
+
+                        <label>
+                            Antecedentes criminais
+                            <span class="obrigatorio">*</span>
+                        </label>
+
+                        <label class="upload-box">
+
+                            <input
+                                type="file"
+                                id="antecedentes"
+                                name="antecedentes"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                required
+                            >
+
+                            <div>
+
+                                <div class="upload-icon">
+                                    🛡️
+                                </div>
+
+                                <div class="upload-text">
+                                    Clique para enviar ou arraste o arquivo
+                                </div>
+
+                                <span class="upload-info">
+                                    PDF, JPG ou PNG · Máx. 10MB
+                                </span>
+
+                                <div
+                                    class="arquivo-selecionado"
+                                    id="nomeAntecedentes">
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+
+
+                    <!-- FOTO -->
+
+                    <div class="campo campo-completo">
+
+                        <label>
+                            Foto do caminhoneiro
+                            <span class="obrigatorio">*</span>
+                        </label>
+
+
+                        <div class="foto-area">
+
+
+                            <div class="foto-preview">
+
+                                <span id="iconeFoto">
+                                    👤
+                                </span>
+
+                                <img
+                                    id="previewFoto"
+                                    alt="Foto do caminhoneiro"
+                                >
+
+                            </div>
+
+
+
+                            <div class="foto-upload">
+
+                                <label class="upload-box">
+
+                                    <input
+                                        type="file"
+                                        id="foto"
+                                        name="foto"
+                                        accept="image/jpeg,image/png"
+                                        required
+                                    >
+
+                                    <div>
+
+                                        <div class="upload-icon">
+                                            📷
+                                        </div>
+
+                                        <div class="upload-text">
+                                            Clique para enviar ou arraste a foto
+                                        </div>
+
+                                        <span class="upload-info">
+                                            JPG ou PNG · Máx. 5MB
+                                        </span>
+
+                                    </div>
+
+                                </label>
+
+                            </div>
+
+
+
+                            <p class="foto-explicacao">
+                                Use uma foto nítida e atual.
+                                Ela será usada para identificação
+                                na plataforma.
+                            </p>
+
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- ==============================
+                     CARGAS
+                ============================== -->
+
+                <section class="cargas-section">
+
+
+                    <div class="cargas-titulo">
+
+                        🚚
+
+                        Cargas que você pode levar
+                        <span style="font-size:14px;">
+                            (opcional)
+                        </span>
+
+                    </div>
+
+
+                    <p class="cargas-descricao">
+
+                        Selecione abaixo os tipos de carga que
+                        você está habilitado ou disponível para transportar.
+
+                    </p>
+
+
+
+                    <div class="cargas-grid">
+
+
+                        <!-- CARGA SECA -->
+
+                        <label class="carga">
+
+                            <input
+                                type="checkbox"
+                                name="cargas"
+                                value="carga-seca"
+                            >
+
+                            <strong>
+                                📦 Carga seca
+                            </strong>
+
+                            <small>
+                                Produtos em geral
+                            </small>
+
+                        </label>
+
+
+
+                        <!-- REFRIGERADA -->
+
+                        <label class="carga">
+
+                            <input
+                                type="checkbox"
+                                name="cargas"
+                                value="refrigerada"
+                            >
+
+                            <strong>
+                                🌡️ Refrigerada
+                            </strong>
+
+                            <small>
+                                Temperatura controlada
+                            </small>
+
+                        </label>
+
+
+
+                        <!-- GRANEL SÓLIDO -->
+
+                        <label class="carga">
+
+                            <input
+                                type="checkbox"
+                                name="cargas"
+                                value="granel-solido"
+                            >
+
+                            <strong>
+                                🏔️ Granel sólido
+                            </strong>
+
+                            <small>
+                                Minérios, grãos, etc.
+                            </small>
+
+                        </label>
+
+
+
+                        <!-- GRANEL LÍQUIDO -->
+
+                        <label class="carga">
+
+                            <input
+                                type="checkbox"
+                                name="cargas"
+                                value="granel-liquido"
+                            >
+
+                            <strong>
+                                💧 Granel líquido
+                            </strong>
+
+                            <small>
+                                Combustíveis, químicos, etc.
+                            </small>
+
+                        </label>
+
+
+
+                        <!-- FRIGORIFICADA -->
+
+                        <label class="carga">
+
+                            <input
+                                type="checkbox"
+                                name="cargas"
+                                value="frigorificada"
+                            >
+
+                            <strong>
+                                ❄️ Frigorificada
+                            </strong>
+
+                            <small>
+                                Congelados e resfriados
+                            </small>
+
+                        </label>
+
+
+
+                        <!-- CARGA PERIGOSA -->
+
+                        <label class="carga">
+
+                            <input
+                                type="checkbox"
+                                name="cargas"
+                                value="carga-perigosa"
+                            >
+
+                            <strong>
+                                ⚠️ Carga perigosa
+                            </strong>
+
+                            <small>
+                                Produtos químicos e inflamáveis
+                            </small>
+
+                        </label>
+
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- ==============================
+                     BOTÃO
+                ============================== -->
+
+                <button
+                    type="submit"
+                    class="btn-cadastro"
+                >
+
+                    👤 Criar cadastro
+
+                </button>
+
+
+
+                <!-- MENSAGEM -->
+
+                <div
+                    class="mensagem"
+                    id="mensagem"
+                >
+                    Cadastro preenchido com sucesso!
+                    Agora seus documentos poderão ser verificados.
+                </div>
+
+
+
+                <!-- LOGIN -->
+
+                <p class="login">
+
+                    Já tenho uma conta?
+
+                    <a href="login.html">
+                        Entrar →
+                    </a>
+
+                </p>
+
+
+
+                <!-- ==============================
+                     SEGURANÇA
+                ============================== -->
+
+                <div class="seguranca">
+
+
+                    <div class="seguranca-item">
+
+                        <div class="seguranca-icon">
+                            🔒
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Dados protegidos
+                            </strong>
+
+                            <span>
+                                Seus dados estão seguros conosco.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="seguranca-item">
+
+                        <div class="seguranca-icon">
+                            🛡️
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Documentos verificados
+                            </strong>
+
+                            <span>
+                                Mais segurança para todas as partes.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+            </form>
+
+
+        </section>
+
+    </main>
+
+
+
+    <!-- ==============================
+         JAVASCRIPT
+    ============================== -->
+
+    <script>
+
+
+        /* ==============================
+           MÁSCARA CPF
+        ============================== */
+
+        const cpf = document.getElementById("cpf");
+
+        cpf.addEventListener("input", function () {
+
+            let valor = this.value
+                .replace(/\D/g, "")
+                .substring(0, 11);
+
+            valor = valor.replace(
+                /(\d{3})(\d)/,
+                "$1.$2"
+            );
+
+            valor = valor.replace(
+                /(\d{3})(\d)/,
+                "$1.$2"
+            );
+
+            valor = valor.replace(
+                /(\d{3})(\d{1,2})$/,
+                "$1-$2"
+            );
+
+            this.value = valor;
+
+        });
+
+
+
+        /* ==============================
+           MOSTRAR NOME DA CNH
+        ============================== */
+
+        const cnh =
+            document.getElementById("cnh");
+
+        const nomeCNH =
+            document.getElementById("nomeCNH");
+
+        cnh.addEventListener("change", function () {
+
+            if (this.files.length > 0) {
+
+                nomeCNH.textContent =
+                    "✓ " + this.files[0].name;
+
+            }
+
+        });
+
+
+
+        /* ==============================
+           MOSTRAR NOME DOS ANTECEDENTES
+        ============================== */
+
+        const antecedentes =
+            document.getElementById("antecedentes");
+
+        const nomeAntecedentes =
+            document.getElementById("nomeAntecedentes");
+
+        antecedentes.addEventListener(
+            "change",
+            function () {
+
+                if (this.files.length > 0) {
+
+                    nomeAntecedentes.textContent =
+                        "✓ " + this.files[0].name;
+
+                }
+
+            }
+        );
+
+
+
+        /* ==============================
+           PREVIEW DA FOTO
+        ============================== */
+
+        const foto =
+            document.getElementById("foto");
+
+        const previewFoto =
+            document.getElementById("previewFoto");
+
+        const iconeFoto =
+            document.getElementById("iconeFoto");
+
+
+        foto.addEventListener("change", function () {
+
+            const arquivo = this.files[0];
+
+            if (!arquivo) {
+                return;
+            }
+
+            const leitor =
+                new FileReader();
+
+            leitor.onload = function (evento) {
+
+                previewFoto.src =
+                    evento.target.result;
+
+                previewFoto.style.display =
+                    "block";
+
+                iconeFoto.style.display =
+                    "none";
+
+            };
+
+            leitor.readAsDataURL(arquivo);
+
+        });
+
+
+
+        /* ==============================
+           ENVIO DO FORMULÁRIO
+        ============================== */
+
+        const formulario =
+            document.getElementById("cadastroForm");
+
+        const mensagem =
+            document.getElementById("mensagem");
+
+
+        formulario.addEventListener(
+            "submit",
+            function (evento) {
+
+                evento.preventDefault();
+
+
+                /*
+                 * Aqui futuramente você poderá
+                 * enviar os dados para seu backend.
+                 */
+
+
+                mensagem.style.display =
+                    "block";
+
+
+                mensagem.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+            }
+        );
+
+    </script>
+
+
+</body>
+
+</html>
