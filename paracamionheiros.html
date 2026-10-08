@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Para Caminhoneiros | Frete Conecta</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, "Times New Roman", serif;
+            background: #082b47;
+            color: white;
+        }
+
+        /* ==============================
+           FUNDO PRINCIPAL
+        ============================== */
+
+        .hero {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+
+            background:
+                linear-gradient(
+                    rgba(5, 31, 54, 0.82),
+                    rgba(5, 31, 54, 0.94)
+                ),
+                url("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=2000&auto=format&fit=crop");
+
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* ==============================
+           NAVBAR
+        ============================== */
+
+        .navbar {
+            width: 100%;
+            height: 95px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 5%;
+
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+
+            font-size: 30px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .logo-icon {
+            font-size: 40px;
+        }
+
+        .menu {
+            display: flex;
+            align-items: center;
+            gap: 38px;
+        }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+
+            font-size: 18px;
+            transition: 0.3s;
+
+            padding: 10px 0;
+        }
+
+        .menu a:hover {
+            color: #ff7200;
+        }
+
+        .menu a.active {
+            border-bottom: 3px solid #ff7200;
+        }
+
+        .btn-conta {
+            background: #ff7200;
+            color: white !important;
+
+            padding: 16px 28px !important;
+            border-radius: 12px;
+
+            font-weight: bold;
+        }
+
+        .btn-conta:hover {
+            background: #ff8500;
+            transform: translateY(-2px);
+        }
+
+        /* ==============================
+           CONTEÚDO PRINCIPAL
+        ============================== */
+
+        .hero-content {
+            min-height: calc(100vh - 95px);
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 30px 5% 70px;
+
+            gap: 50px;
+        }
+
+        /* ==============================
+           LADO ESQUERDO
+        ============================== */
+
+        .hero-text {
+            width: 48%;
+            max-width: 650px;
+        }
+
+        .mini-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            color: #dbe8f4;
+
+            font-size: 13px;
+            font-weight: bold;
+
+            letter-spacing: 4px;
+
+            margin-bottom: 25px;
+        }
+
+        .mini-title::before {
+            content: "";
+
+            width: 45px;
+            height: 3px;
+
+            background: #ff7200;
+        }
+
+        .hero-text h1 {
+            font-size: 68px;
+            line-height: 1.02;
+
+            margin-bottom: 30px;
+
+            color: #ffffff;
+        }
+
+        .hero-text p {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: #b9cce0;
+
+            font-size: 21px;
+            line-height: 1.55;
+
+            max-width: 610px;
+
+            margin-bottom: 35px;
+        }
+
+        /* ==============================
+           BOTÕES
+        ============================== */
+
+        .buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 18px 32px;
+
+            border-radius: 10px;
+
+            text-decoration: none;
+
+            font-size: 19px;
+            font-weight: bold;
+
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: #ff7200;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ff8500;
+            transform: translateY(-3px);
+        }
+
+        .btn-secondary {
+            border: 1px solid rgba(255,255,255,0.35);
+
+            background: rgba(255,255,255,0.04);
+
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        /* ==============================
+           PAINEL DIREITO
+        ============================== */
+
+        .dashboard {
+            width: 53%;
+            max-width: 680px;
+
+            background: #f7f9fc;
+
+            color: #092b49;
+
+            border-radius: 22px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.35);
+
+            position: relative;
+        }
+
+        /* Cabeçalho do painel */
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 20px;
+        }
+
+        .dashboard-logo {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .dashboard-logo span {
+            font-size: 27px;
+        }
+
+        .dashboard-icons {
+            display: flex;
+            gap: 20px;
+
+            font-size: 22px;
+        }
+
+        /* ==============================
+           RESUMO
+        ============================== */
+
+        .summary {
+            background: #082d50;
+
+            border-radius: 14px;
+
+            padding: 22px;
+
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+
+            margin-bottom: 22px;
+        }
+
+        .summary-item {
+            padding: 0 20px;
+
+            border-right: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .summary-item:first-child {
+            padding-left: 0;
+        }
+
+        .summary-item:last-child {
+            border-right: none;
+        }
+
+        .summary-icon {
+            font-size: 22px;
+            margin-bottom: 7px;
+        }
+
+        .summary-title {
+            color: #c3d2e0;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 13px;
+
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            color: white;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 24px;
+            font-weight: bold;
+
+            margin-bottom: 5px;
+        }
+
+        .summary-change {
+            color: #25d49b;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 12px;
+        }
+
+        .stars {
+            color: #ffb400;
+
+            letter-spacing: 2px;
+
+            font-size: 17px;
+        }
+
+        /* ==============================
+           OFERTAS
+        ============================== */
+
+        .offers-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 12px;
+        }
+
+        .offers-title h2 {
+            font-size: 20px;
+        }
+
+        .offers-title a {
+            color: #1458a6;
+
+            text-decoration: none;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* ==============================
+           CARD DE FRETE
+        ============================== */
+
+        .offer {
+            border: 1px solid #dce4ec;
+
+            border-radius: 12px;
+
+            padding: 18px;
+
+            margin-bottom: 12px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            background: white;
+
+            transition: 0.3s;
+        }
+
+        .offer:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 8px 25px rgba(0,0,0,0.08);
+        }
+
+        .offer-left {
+            flex: 1;
+        }
+
+        .route {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            font-family: Arial, sans-serif;
+
+            font-weight: bold;
+
+            font-size: 14px;
+
+            margin-bottom: 10px;
+        }
+
+        .route span {
+            color: #1259a6;
+        }
+
+        .details {
+            color: #6d8196;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 12px;
+        }
+
+        .offer-right {
+            text-align: right;
+        }
+
+        .price {
+            font-family: Arial, sans-serif;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            color: #123c59;
+
+            margin-bottom: 7px;
+        }
+
+        .verified {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+
+            padding: 5px 9px;
+
+            border-radius: 20px;
+
+            background: #dff8ed;
+
+            color: #0c9c69;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 10px;
+
+            font-weight: bold;
+        }
+
+        /* ==============================
+           BENEFÍCIOS
+        ============================== */
+
+        .benefits {
+            background: #062846;
+
+            min-height: 170px;
+
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            align-items: center;
+
+            padding: 30px 7%;
+
+            gap: 40px;
+        }
+
+        .benefit {
+            display: flex;
+            align-items: center;
+
+            gap: 20px;
+
+            border-right: 1px solid rgba(255,255,255,0.25);
+
+            padding-right: 30px;
+        }
+
+        .benefit:last-child {
+            border-right: none;
+        }
+
+        .benefit-icon {
+            color: #ff7200;
+
+            font-size: 45px;
+
+            min-width: 55px;
+        }
+
+        .benefit h3 {
+            font-size: 22px;
+
+            margin-bottom: 8px;
+        }
+
+        .benefit p {
+            color: #b7c9da;
+
+            font-size: 15px;
+
+            line-height: 1.4;
+        }
+
+        /* ==============================
+           RESPONSIVIDADE
+        ============================== */
+
+        @media (max-width: 1100px) {
+
+            .menu {
+                gap: 18px;
+            }
+
+            .menu a {
+                font-size: 15px;
+            }
+
+            .hero-content {
+                flex-direction: column;
+
+                align-items: flex-start;
+            }
+
+            .hero-text {
+                width: 100%;
+            }
+
+            .dashboard {
+                width: 100%;
+
+                max-width: 750px;
+
+                align-self: center;
+            }
+
+            .hero-text h1 {
+                font-size: 55px;
+            }
+        }
+
+        @media (max-width: 750px) {
+
+            .navbar {
+                height: auto;
+
+                padding: 20px;
+
+                flex-direction: column;
+
+                gap: 20px;
+            }
+
+            .menu {
+                flex-wrap: wrap;
+
+                justify-content: center;
+
+                gap: 15px;
+            }
+
+            .hero-content {
+                padding: 50px 20px;
+            }
+
+            .hero-text h1 {
+                font-size: 43px;
+            }
+
+            .hero-text p {
+                font-size: 18px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .summary-item {
+                border-right: none;
+
+                border-bottom: 1px solid rgba(255,255,255,0.2);
+
+                padding: 0 0 15px;
+            }
+
+            .summary-item:last-child {
+                border-bottom: none;
+            }
+
+            .offer {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .offer-right {
+                text-align: left;
+            }
+
+            .benefits {
+                grid-template-columns: 1fr;
+
+                padding: 40px 25px;
+            }
+
+            .benefit {
+                border-right: none;
+
+                border-bottom: 1px solid rgba(255,255,255,0.2);
+
+                padding-bottom: 20px;
+            }
+
+            .benefit:last-child {
+                border-bottom: none;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+
+    <!-- =========================================
+         HERO
+    ========================================== -->
+
+    <section class="hero">
+
+
+        <!-- NAVBAR -->
+
+        <header class="navbar">
+
+            <div class="logo">
+                <span class="logo-icon">🍊</span>
+                <span>Frete Conecta</span>
+            </div>
+
+
+            <nav class="menu">
+
+                <a href="#" class="active">
+                    Para caminhoneiros
+                </a>
+
+                <a href="#">
+                    Para embarcadores
+                </a>
+
+                <a href="#">
+                    Como funciona
+                </a>
+
+                <a href="#">
+                    Segurança
+                </a>
+
+                <a href="#">
+                    Entrar
+                </a>
+
+                <a href="#" class="btn-conta">
+                    Criar conta →
+                </a>
+
+            </nav>
+
+        </header>
+
+
+        <!-- CONTEÚDO -->
+
+        <div class="hero-content">
+
+
+            <!-- LADO ESQUERDO -->
+
+            <div class="hero-text">
+
+                <div class="mini-title">
+                    SEU TRABALHO MOVE O BRASIL
+                </div>
+
+
+                <h1>
+                    Mais cargas.<br>
+                    Mais ganhos.<br>
+                    Mais liberdade.
+                </h1>
+
+
+                <p>
+                    Aqui, o caminhoneiro encontra fretes
+                    verificados, acompanha ofertas em tempo
+                    real e trabalha com mais segurança.
+                </p>
+
+
+                <div class="buttons">
+
+                    <a href="#" class="btn btn-primary">
+                        Encontrar cargas →
+                    </a>
+
+                    <a href="#" class="btn btn-secondary">
+                        Criar meu perfil
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- PAINEL DIREITO -->
+
+            <div class="dashboard">
+
+
+                <!-- CABEÇALHO -->
+
+                <div class="dashboard-header">
+
+                    <div class="dashboard-logo">
+                        <span>🍊</span>
+                        Frete Conecta
+                    </div>
+
+                    <div class="dashboard-icons">
+                        🔔
+                        ☰
+                    </div>
+
+                </div>
+
+
+                <!-- RESUMO -->
+
+                <div class="summary">
+
+
+                    <div class="summary-item">
+
+                        <div class="summary-icon">
+                            💼
+                        </div>
+
+                        <div class="summary-title">
+                            Saldo do mês
+                        </div>
+
+                        <div class="summary-value">
+                            R$ 8.450,00
+                        </div>
+
+                        <div class="summary-change">
+                            ↑ 12% vs. mês anterior
+                        </div>
+
+                    </div>
+
+
+                    <div class="summary-item">
+
+                        <div class="summary-icon">
+                            🚚
+                        </div>
+
+                        <div class="summary-title">
+                            Cargas realizadas
+                        </div>
+
+                        <div class="summary-value">
+                            12
+                        </div>
+
+                        <div class="summary-change">
+                            este mês
+                        </div>
+
+                    </div>
+
+
+                    <div class="summary-item">
+
+                        <div class="summary-icon">
+                            ⭐
+                        </div>
+
+                        <div class="summary-title">
+                            Avaliação
+                        </div>
+
+                        <div class="summary-value">
+                            4,9
+                        </div>
+
+                        <div class="stars">
+                            ★★★★★
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TÍTULO DAS OFERTAS -->
+
+                <div class="offers-title">
+
+                    <h2>
+                        Ofertas de frete
+                    </h2>
+
+                    <a href="#">
+                        Ver todas →
+                    </a>
+
+                </div>
+
+
+                <!-- OFERTA 1 -->
+
+                <div class="offer">
+
+                    <div class="offer-left">
+
+                        <div class="route">
+                            📍 São Paulo (SP)
+                            <span>→</span>
+                            📍 Curitiba (PR)
+                        </div>
+
+                        <div class="details">
+                            📦 Granel sólido &nbsp;·&nbsp;
+                            28,5 t &nbsp;·&nbsp;
+                            Hoje, 18h
+                        </div>
+
+                    </div>
+
+
+                    <div class="offer-right">
+
+                        <div class="price">
+                            R$ 3.800,00
+                        </div>
+
+                        <div class="verified">
+                            ✓ Carga verificada
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OFERTA 2 -->
+
+                <div class="offer">
+
+                    <div class="offer-left">
+
+                        <div class="route">
+                            📍 Campinas (SP)
+                            <span>→</span>
+                            📍 Rio de Janeiro (RJ)
+                        </div>
+
+                        <div class="details">
+                            📦 Carga seca &nbsp;·&nbsp;
+                            14,0 t &nbsp;·&nbsp;
+                            Hoje, 19h
+                        </div>
+
+                    </div>
+
+
+                    <div class="offer-right">
+
+                        <div class="price">
+                            R$ 2.450,00
+                        </div>
+
+                        <div class="verified">
+                            ✓ Carga verificada
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OFERTA 3 -->
+
+                <div class="offer">
+
+                    <div class="offer-left">
+
+                        <div class="route">
+                            📍 Uberlândia (MG)
+                            <span>→</span>
+                            📍 Salvador (BA)
+                        </div>
+
+                        <div class="details">
+                            📦 Grãos &nbsp;·&nbsp;
+                            32,0 t &nbsp;·&nbsp;
+                            Amanhã, 07h
+                        </div>
+
+                    </div>
+
+
+                    <div class="offer-right">
+
+                        <div class="price">
+                            R$ 5.200,00
+                        </div>
+
+                        <div class="verified">
+                            ✓ Carga verificada
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================
+         BENEFÍCIOS
+    ========================================== -->
+
+    <section class="benefits">
+
+
+        <div class="benefit">
+
+            <div class="benefit-icon">
+                🛡️
+            </div>
+
+            <div>
+
+                <h3>
+                    Fretes verificados
+                </h3>
+
+                <p>
+                    Todas as cargas passam por uma
+                    análise de segurança antes de serem
+                    publicadas.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="benefit">
+
+            <div class="benefit-icon">
+                💳
+            </div>
+
+            <div>
+
+                <h3>
+                    Pagamento seguro
+                </h3>
+
+                <p>
+                    Receba seu frete com segurança,
+                    sem complicação e no prazo combinado.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="benefit">
+
+            <div class="benefit-icon">
+                📍
+            </div>
+
+            <div>
+
+                <h3>
+                    Escolha suas rotas
+                </h3>
+
+                <p>
+                    Tenha acesso a cargas em todo o Brasil
+                    e siga o seu destino com mais autonomia.
+                </p>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+</body>
+</html>

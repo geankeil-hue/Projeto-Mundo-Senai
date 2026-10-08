@@ -1,0 +1,458 @@
+css
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background:
+        linear-gradient(
+            rgba(10, 25, 47, 0.85),
+            rgba(10, 25, 47, 0.95)
+        ),
+        url("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=1600")
+        no-repeat center center / cover;
+
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+
+/* =========================
+   NAVBAR
+========================= */
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 80px;
+
+    position: relative;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.logo-icon {
+    font-size: 28px;
+}
+
+.logo-text {
+    color: #ffffff;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.nav-links a {
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover {
+    color: #ffffff;
+}
+
+
+/* =========================
+   BOTÃO CRIAR CONTA
+========================= */
+
+.Criar-conta {
+    background-color: #ff6b00;
+    color: #ffffff !important;
+
+    padding: 10px 20px;
+    border-radius: 8px;
+
+    text-decoration: none;
+    font-weight: 600;
+
+    display: inline-block;
+
+    transition:
+        background-color 0.2s,
+        transform 0.2s;
+
+    position: relative;
+    z-index: 200;
+
+    cursor: pointer;
+}
+
+.Criar-conta:hover {
+    background-color: #e05e00;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+.Criar-conta:active {
+    transform: translateY(0);
+}
+
+
+/* =========================
+   BOTÃO OUTLINE
+========================= */
+
+.btn-outline {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+
+    padding: 10px 20px;
+    border-radius: 8px;
+
+    text-decoration: none;
+    font-weight: 600;
+}
+
+
+/* =========================
+   HERO
+========================= */
+
+.hero {
+    padding: 60px 80px;
+
+    position: relative;
+    z-index: 1;
+}
+
+.hero-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.hero-content {
+    max-width: 550px;
+}
+
+.badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    background: rgba(255, 255, 255, 0.1);
+
+    padding: 6px 14px;
+    border-radius: 20px;
+
+    font-size: 0.85rem;
+    color: #e2e8f0;
+
+    margin-bottom: 25px;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    line-height: 1.1;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+
+/* Seu HTML usa class="descrição" */
+.descrição {
+    color: #94a3b8;
+
+    font-size: 1.1rem;
+    line-height: 1.5;
+
+    margin-bottom: 30px;
+}
+
+
+/* Também deixei esta opção caso você troque
+   "descrição" por "hero-description" depois */
+.hero-description {
+    color: #94a3b8;
+
+    font-size: 1.1rem;
+    line-height: 1.5;
+
+    margin-bottom: 30px;
+}
+
+
+/* =========================
+   BOTÕES DO HERO
+========================= */
+
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 35px;
+}
+
+.Encontrar-cargas {
+    background-color: #ff6b00;
+    color: #ffffff;
+
+    padding: 15px 25px;
+    border-radius: 8px;
+
+    text-decoration: none;
+    font-weight: bold;
+
+    transition: 0.2s;
+}
+
+.Encontrar-cargas:hover {
+    background-color: #e05e00;
+}
+
+.Publicar-uma-carga {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+
+    color: #ffffff;
+
+    padding: 15px 25px;
+    border-radius: 8px;
+
+    text-decoration: none;
+    font-weight: bold;
+
+    transition: 0.2s;
+}
+
+.Publicar-uma-carga:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* =========================
+   FEATURES
+========================= */
+
+.hero-features {
+    display: flex;
+    gap: 20px;
+
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+
+/* =========================
+   CARD DA DIREITA
+========================= */
+
+.hero-card-container {
+    position: relative;
+    z-index: 2;
+}
+
+.match-card {
+    background-color: #f8fafc;
+    color: #0f172a;
+
+    padding: 24px;
+    border-radius: 16px;
+
+    width: 380px;
+
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+
+    font-size: 0.75rem;
+    font-weight: bold;
+
+    margin-bottom: 12px;
+}
+
+.tag-title {
+    color: #64748b;
+}
+
+.tag-status {
+    color: #10b981;
+}
+
+.match-card h2 {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+}
+
+.subtext {
+    color: #64748b;
+
+    font-size: 0.85rem;
+
+    margin-bottom: 20px;
+}
+
+
+/* =========================
+   MOTORISTA
+========================= */
+
+.driver-info {
+    display: flex;
+    align-items: center;
+
+    background: #f1f5f9;
+
+    padding: 12px;
+    border-radius: 12px;
+
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+
+    background: #2563eb;
+    color: white;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.driver-details {
+    display: flex;
+    flex-direction: column;
+
+    flex: 1;
+}
+
+.driver-details strong {
+    font-size: 0.9rem;
+}
+
+.driver-details span {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+
+/* =========================
+   STATUS DO FRETE
+========================= */
+
+.btn-card-status {
+    background-color: #ff6b00;
+    color: white;
+
+    text-align: center;
+
+    padding: 12px;
+    border-radius: 8px;
+
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+
+/* =========================
+   RESPONSIVO
+========================= */
+
+@media (max-width: 900px) {
+
+    .navbar {
+        padding: 20px 30px;
+    }
+
+    .nav-links {
+        gap: 12px;
+    }
+
+    .hero {
+        padding: 40px 30px;
+    }
+
+    .hero-container {
+        flex-direction: column;
+    }
+
+    .hero-content {
+        max-width: 700px;
+    }
+}
+
+
+@media (max-width: 650px) {
+
+    .navbar {
+        padding: 20px;
+    }
+
+    .nav-links a:not(.Criar-conta) {
+        display: none;
+    }
+
+    .hero {
+        padding: 30px 20px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.3rem;
+    }
+
+    .match-card {
+        width: 100%;
+        max-width: 380px;
+    }
+
+    .hero-features {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+#botaoCriarConta {
+    position: relative;
+    z-index: 9999;
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+#botaoCriarConta {
+    position: relative;
+    z-index: 999999;
+    display: inline-block;
+    background-color: #ff6b00;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+#botaoCriarConta:hover {
+    background-color: #e05e00;
+}
+

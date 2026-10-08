@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Frete Conecta - Login</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                linear-gradient(rgba(5, 35, 60, 0.94), rgba(5, 35, 60, 0.96)),
+                linear-gradient(135deg, #092d4b, #061d32);
+            color: white;
+        }
+
+        /* =========================
+           FUNDO
+        ========================== */
+
+        .pagina {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .estrada {
+            position: absolute;
+            bottom: -150px;
+            left: 0;
+            width: 100%;
+            height: 55%;
+            opacity: 0.12;
+            background:
+                linear-gradient(160deg, transparent 45%, #ffffff 46%, #ffffff 47%, transparent 48%),
+                linear-gradient(20deg, transparent 45%, #ffffff 46%, #ffffff 47%, transparent 48%);
+            transform: perspective(500px) rotateX(55deg);
+        }
+
+        /* =========================
+           HEADER
+        ========================== */
+
+        header {
+            width: 100%;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .logo-fruta {
+            font-size: 32px;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 35px;
+        }
+
+        nav a {
+            color: #e9f1f8;
+            text-decoration: none;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        nav a:hover {
+            color: #ff7500;
+        }
+
+        .btn-criar {
+            background: #ff7200;
+            padding: 16px 27px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-criar:hover {
+            background: #ff8a29;
+            color: white;
+        }
+
+        /* =========================
+           CONTEÚDO PRINCIPAL
+        ========================== */
+
+        .conteudo {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 70px;
+            padding: 50px 6%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* =========================
+           LADO ESQUERDO
+        ========================== */
+
+        .lado-esquerdo {
+            width: 50%;
+            max-width: 700px;
+        }
+
+        .selo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 18px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.08);
+            border-radius: 30px;
+            color: #e9f1f8;
+            margin-bottom: 35px;
+        }
+
+        .selo span {
+            color: #4fc3ff;
+        }
+
+        .lado-esquerdo h1 {
+            font-size: clamp(45px, 5vw, 70px);
+            line-height: 1.05;
+            margin-bottom: 25px;
+        }
+
+        .lado-esquerdo h1 span {
+            color: #ff7500;
+        }
+
+        .descricao {
+            color: #a9bfd2;
+            font-size: 20px;
+            line-height: 1.6;
+            max-width: 650px;
+            margin-bottom: 40px;
+        }
+
+        .beneficios {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .beneficio {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .icone-beneficio {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .beneficio h3 {
+            font-size: 17px;
+            margin-bottom: 5px;
+        }
+
+        .beneficio p {
+            color: #9db3c7;
+            font-size: 14px;
+        }
+
+        /* =========================
+           CARD LOGIN
+        ========================== */
+
+        .card-login {
+            width: 480px;
+            background: #f8fafc;
+            color: #102b45;
+            border-radius: 22px;
+            padding: 38px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+        }
+
+        .logo-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 29px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .logo-card .fruta {
+            font-size: 32px;
+        }
+
+        .card-login h2 {
+            text-align: center;
+            font-size: 29px;
+            margin-bottom: 10px;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #71839a;
+            margin-bottom: 30px;
+        }
+
+        /* =========================
+           CAMPOS
+        ========================== */
+
+        .campo {
+            margin-bottom: 20px;
+        }
+
+        .campo label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .input-container .icone {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7d8ea1;
+            font-size: 19px;
+        }
+
+        .campo input {
+            width: 100%;
+            height: 56px;
+            border: 1px solid #cbd6e1;
+            border-radius: 12px;
+            outline: none;
+            padding: 0 48px;
+            font-size: 15px;
+            color: #162f47;
+            background: white;
+            transition: 0.3s;
+        }
+
+        .campo input:focus {
+            border-color: #ff7500;
+            box-shadow: 0 0 0 3px rgba(255,117,0,0.12);
+        }
+
+        .mostrar-senha {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 18px;
+            color: #71839a;
+        }
+
+        /* =========================
+           OPÇÕES
+        ========================== */
+
+        .opcoes {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0 25px;
+            font-size: 14px;
+        }
+
+        .lembrar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #52677d;
+        }
+
+        .lembrar input {
+            width: 17px;
+            height: 17px;
+            accent-color: #287be8;
+        }
+
+        .esqueceu {
+            color: #1877d2;
+            text-decoration: underline;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* =========================
+           BOTÕES
+        ========================== */
+
+        .btn-entra {
+            width: 100%;
+            height: 57px;
+            border: none;
+            border-radius: 12px;
+            background: #ff7200;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-entrar:hover {
+            background: #e96400;
+            transform: translateY(-1px);
+        }
+
+        .divisor {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #8292a3;
+            margin: 25px 0;
+        }
+
+        .divisor::before,
+        .divisor::after {
+            content: "";
+            height: 1px;
+            background: #dce2e8;
+            flex: 1;
+        }
+
+        .btn-conta {
+            width: 100%;
+            height: 55px;
+            background: white;
+            border: 1px solid #8ca4ba;
+            border-radius: 12px;
+            color: #244b68;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-conta:hover {
+            background: #eef4f8;
+        }
+
+        /* =========================
+           MENSAGEM
+        ========================== */
+
+        #mensagem {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* =========================
+           RESPONSIVO
+        ========================== */
+
+        @media (max-width: 1050px) {
+
+            nav a:not(.btn-criar) {
+                display: none;
+            }
+
+            .conteudo {
+                justify-content: center;
+            }
+
+            .lado-esquerdo {
+                display: none;
+            }
+        }
+
+        @media (max-width: 550px) {
+
+            header {
+                padding: 0 20px;
+            }
+
+            .logo {
+                font-size: 21px;
+            }
+
+            .btn-criar {
+                display: none;
+            }
+
+            .conteudo {
+                padding: 30px 15px;
+            }
+
+            .card-login {
+                width: 100%;
+                padding: 28px 22px;
+                border-radius: 18px;
+            }
+
+            .card-login h2 {
+                font-size: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="pagina">
+
+        <div class="estrada"></div>
+
+        <!-- =========================
+             CABEÇALHO
+        ========================== -->
+
+        <header>
+
+            <div class="logo">
+                <span class="logo-fruta">🍊</span>
+                <span>Frete Conecta</span>
+            </div>
+
+            <nav>
+                <a href="#">Para caminhoneiros</a>
+                <a href="#">Para embarcadores</a>
+                <a href="#">Como funciona</a>
+                <a href="#">Segurança</a>
+                <a href="#">Entrar</a>
+
+                <a href="#" class="btn-criar">
+                    Criar conta →
+                </a>
+            </nav>
+
+        </header>
+
+
+        <!-- =========================
+             CONTEÚDO
+        ========================== -->
+
+        <main class="conteudo">
+
+            <!-- LADO ESQUERDO -->
+
+            <section class="lado-esquerdo">
+
+                <div class="selo">
+                    <span>🛡️</span>
+                    Fretes verificados. Pagamento protegido.
+                </div>
+
+                <h1>
+                    Bem-vindo de<br>
+                    volta ao <span>Frete Conecta.</span>
+                </h1>
+
+                <p class="descricao">
+                    Faça login na sua conta e continue conectando
+                    caminhoneiros e embarcadores de todo o Brasil.
+                </p>
+
+                <div class="beneficios">
+
+                    <div class="beneficio">
+                        <div class="icone-beneficio">
+                            🚛
+                        </div>
+
+                        <div>
+                            <h3>Mais oportunidades</h3>
+                            <p>Encontre cargas e fretes de forma rápida e segura.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="beneficio">
+                        <div class="icone-beneficio">
+                            🛡️
+                        </div>
+
+                        <div>
+                            <h3>Segurança em todas as etapas</h3>
+                            <p>Seu transporte protegido do início ao fim.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="beneficio">
+                        <div class="icone-beneficio">
+                            ⚡
+                        </div>
+
+                        <div>
+                            <h3>Agilidade e praticidade</h3>
+                            <p>Tudo o que você precisa em um só lugar.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- CARD DE LOGIN -->
+
+            <section class="card-login">
+
+                <div class="logo-card">
+                    <span class="fruta">🍊</span>
+                    <span>Frete Conecta</span>
+                </div>
+
+                <h2>Entrar na sua conta</h2>
+
+                <p class="subtitulo">
+                    Digite seus dados para acessar o sistema.
+                </p>
+
+
+                <!-- E-MAIL -->
+
+                <div class="campo">
+
+                    <label for="email">
+                        E-mail ou CPF
+                    </label>
+
+                    <div class="input-container">
+
+                        <span class="icone">✉</span>
+
+                        <input
+                            type="text"
+                            id="email"
+                            placeholder="Digite seu e-mail ou CPF"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- SENHA -->
+
+                <div class="campo">
+
+                    <label for="senha">
+                        Senha
+                    </label>
+
+                    <div class="input-container">
+
+                        <span class="icone">🔒</span>
+
+                        <input
+                            type="password"
+                            id="senha"
+                            placeholder="Digite sua senha"
+                        >
+
+                        <button
+                            type="button"
+                            class="mostrar-senha"
+                            onclick="mostrarSenha()"
+                            id="botaoSenha"
+                        >
+                            👁
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OPÇÕES -->
+
+                <div class="opcoes">
+
+                    <label class="lembrar">
+
+                        <input
+                            type="checkbox"
+                            id="lembrar"
+                        >
+
+                        Lembrar de mim
+
+                    </label>
+
+                    <span
+                        class="esqueceu"
+                        onclick="esqueciSenha()"
+                    >
+                        Esqueceu sua senha?
+                    </span>
+
+                </div>
+
+
+                <!-- BOTÃO ENTRAR -->
+
+                <button
+                    class="btn-entrar"
+                    onclick="entrar()"
+                >
+                    ↪ Entrar
+                </button>
+
+
+                <div class="divisor">
+                    ou
+                </div>
+
+
+                <!-- CRIAR CONTA -->
+
+                <button
+                    class="btn-conta"
+                    onclick="criarConta()"
+                >
+                    👤+ &nbsp; Criar uma conta
+                </button>
+
+
+                <div id="mensagem"></div>
+
+            </section>
+
+        </main>
+
+    </div>
+ <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script>
+
+        function mostrarSenha() {
+
+            const senha = document.getElementById("senha");
+            const botao = document.getElementById("botaoSenha");
+
+            if (senha.type === "password") {
+
+                senha.type = "text";
+                botao.innerHTML = "🙈";
+
+            } else {
+
+                senha.type = "password";
+                botao.innerHTML = "👁";
+
+            }
+        }
+
+
+        function entrar() {
+
+            const email = document.getElementById("email").value;
+            const senha = document.getElementById("senha").value;
+            const mensagem = document.getElementById("mensagem");
+
+            if (email === "" || senha === "") {
+
+                mensagem.style.display = "block";
+                mensagem.style.background = "#ffe5e5";
+                mensagem.style.color = "#c62828";
+
+                mensagem.innerHTML =
+                    "⚠️ Preencha o e-mail/CPF e a senha.";
+
+                return;
+            }
+
+            mensagem.style.display = "block";
+            mensagem.style.background = "#e2f7e8";
+            mensagem.style.color = "#16823b";
+
+            mensagem.innerHTML =
+                "✓ Login realizado com sucesso!";
+
+            /*
+                Aqui você poderá futuramente
+                conectar o login ao seu banco de dados.
+            */
+        }
+
+
+        function esqueciSenha() {
+
+            const mensagem = document.getElementById("mensagem");
+
+            mensagem.style.display = "block";
+            mensagem.style.background = "#e8f1ff";
+            mensagem.style.color = "#1769aa";
+
+            mensagem.innerHTML =
+                "📧 Enviaremos as instruções para recuperação da senha.";
+        }
+
+
+        function criarConta() {
+
+            alert(
+                "Página de criação de conta será aberta aqui."
+            );
+
+        }
+
+    </script>
+
+</body>
+
+</html>
