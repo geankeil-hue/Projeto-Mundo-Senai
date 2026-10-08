@@ -1,0 +1,897 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Para Embarcadores | Frete Conecta</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <style>
+        /* ========================================
+           CONFIGURAÇÕES GERAIS
+        ======================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --azul: #092944;
+            --azul-escuro: #061b31;
+            --azul-claro: #8bbfe5;
+            --laranja: #ff6900;
+            --branco: #ffffff;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Playfair Display', Georgia, serif;
+            background: var(--azul-escuro);
+            color: var(--branco);
+            min-height: 100vh;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        /* ========================================
+           CABEÇALHO / MENU
+        ======================================== */
+
+        .navbar {
+            width: 100%;
+            min-height: 88px;
+            padding: 18px 6.5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+            position: relative;
+            z-index: 10;
+            background: rgba(7, 35, 58, 0.96);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            font-size: 27px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .logo-icon {
+            font-size: 34px;
+        }
+
+        .menu {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .menu a {
+            font-size: 16px;
+            color: #e0e8f1;
+            transition: color 0.3s;
+            white-space: nowrap;
+        }
+
+        .menu a:hover,
+        .menu a.active {
+            color: var(--branco);
+        }
+
+        .menu a.active {
+            border-bottom: 2px solid var(--laranja);
+            padding-bottom: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 17px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.25s, background 0.25s;
+            border: 1px solid transparent;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-orange {
+            background: var(--laranja);
+            color: var(--branco);
+        }
+
+        .btn-orange:hover {
+            background: #e95d00;
+        }
+
+        .btn-outline {
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(8, 32, 54, 0.45);
+            color: var(--branco);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ========================================
+           ÁREA PRINCIPAL
+        ======================================== */
+
+        .hero {
+            min-height: calc(100vh - 88px);
+            padding: 60px 6.5% 45px;
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(5, 28, 49, 0.94) 0%,
+                    rgba(5, 32, 55, 0.85) 48%,
+                    rgba(5, 32, 55, 0.91) 100%
+                ),
+                url("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=2000&q=85")
+                center / cover no-repeat;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.18fr);
+            gap: 55px;
+            align-items: center;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        /* ========================================
+           TEXTO DA ESQUERDA
+        ======================================== */
+
+        .hero-text {
+            padding-top: 5px;
+        }
+
+        .security-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 18px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(139,191,229,0.4);
+            border-radius: 30px;
+            background: rgba(76, 126, 164, 0.18);
+            font-size: 14px;
+            color: #f0f6fc;
+        }
+
+        .security-label span {
+            font-size: 20px;
+        }
+
+        .hero-text h1 {
+            max-width: 650px;
+            font-size: clamp(40px, 4vw, 65px);
+            line-height: 1.12;
+            letter-spacing: -1.4px;
+            margin-bottom: 22px;
+            font-weight: 800;
+        }
+
+        .hero-text h1 strong {
+            color: #ffffff;
+        }
+
+        .hero-description {
+            max-width: 580px;
+            color: #a8cce9;
+            font-size: 18px;
+            line-height: 1.85;
+            margin-bottom: 26px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 38px;
+        }
+
+        .hero-buttons .btn {
+            min-height: 58px;
+        }
+
+        /* ========================================
+           PAINEL DE BENEFÍCIOS
+        ======================================== */
+
+        .feature-card {
+            position: relative;
+            background: rgba(239, 246, 251, 0.91);
+            color: var(--azul);
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 17px;
+            padding: 28px;
+            overflow: hidden;
+            box-shadow: 0 20px 55px rgba(0,0,0,0.18);
+        }
+
+        .feature-heading {
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .eyebrow {
+            display: block;
+            color: #315c7d;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 12px;
+        }
+
+        .feature-heading h2 {
+            font-size: clamp(24px, 2vw, 34px);
+            line-height: 1.25;
+            margin-bottom: 12px;
+        }
+
+        .feature-heading p {
+            color: #315c7d;
+            font-size: 15px;
+            line-height: 1.7;
+            max-width: 500px;
+        }
+
+        .feature-list {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 17px 0;
+            border-bottom: 1px solid rgba(30, 77, 110, 0.15);
+        }
+
+        .feature-item:last-child {
+            border-bottom: none;
+            padding-bottom: 5px;
+        }
+
+        .feature-icon {
+            width: 55px;
+            height: 55px;
+            min-width: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--laranja);
+            color: white;
+            font-size: 25px;
+        }
+
+        .feature-item h3 {
+            font-size: 17px;
+            margin: 3px 0 7px;
+        }
+
+        .feature-item p {
+            color: #315c7d;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ========================================
+           INDICADORES
+        ======================================== */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 24px;
+            margin-top: 45px;
+            max-width: 940px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            width: 43px;
+            height: 43px;
+            min-width: 43px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(70, 143, 194, 0.2);
+            border: 1px solid rgba(139,191,229,0.2);
+            font-size: 21px;
+        }
+
+        .stat strong {
+            display: block;
+            color: #b6d9f4;
+            font-size: 19px;
+            margin: 4px 0 5px;
+        }
+
+        .stat span {
+            color: #a8cce9;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* ========================================
+           SEÇÃO COMO FUNCIONA
+        ======================================== */
+
+        .how-it-works {
+            padding: 85px 6.5%;
+            background: #f5f8fb;
+            color: var(--azul);
+            text-align: center;
+        }
+
+        .section-tag {
+            color: #e95d00;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .how-it-works h2 {
+            font-size: clamp(30px, 4vw, 44px);
+            margin: 14px 0;
+        }
+
+        .section-description {
+            max-width: 620px;
+            margin: 0 auto;
+            color: #5b7184;
+            line-height: 1.8;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            max-width: 1200px;
+            margin: 45px auto 0;
+            text-align: left;
+        }
+
+        .step {
+            background: white;
+            border: 1px solid #e0e9f0;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(7, 35, 58, 0.05);
+        }
+
+        .step-number {
+            display: inline-flex;
+            width: 45px;
+            height: 45px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #fff0e5;
+            color: #e95d00;
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .step h3 {
+            margin-bottom: 12px;
+            font-size: 20px;
+        }
+
+        .step p {
+            color: #5b7184;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* ========================================
+           CHAMADA FINAL
+        ======================================== */
+
+        .final-cta {
+            padding: 70px 6.5%;
+            text-align: center;
+            background: var(--azul);
+        }
+
+        .final-cta h2 {
+            font-size: clamp(28px, 4vw, 42px);
+            margin-bottom: 15px;
+        }
+
+        .final-cta p {
+            color: #b6d3e9;
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+
+        footer {
+            background: #041729;
+            color: #9bb8cf;
+            text-align: center;
+            padding: 23px;
+            font-size: 13px;
+        }
+
+        /* ========================================
+           RESPONSIVIDADE
+        ======================================== */
+
+        @media (max-width: 1100px) {
+            .navbar {
+                padding: 20px 4%;
+            }
+
+            .menu {
+                gap: 15px;
+            }
+
+            .menu a {
+                font-size: 14px;
+            }
+
+            .hero {
+                padding-left: 4%;
+                padding-right: 4%;
+            }
+
+            .hero-content {
+                gap: 30px;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .feature-card {
+                padding: 22px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 760px) {
+            .navbar {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 18px;
+            }
+
+            .logo {
+                width: 100%;
+                justify-content: center;
+                font-size: 25px;
+            }
+
+            .menu {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px 20px;
+            }
+
+            .menu a {
+                font-size: 13px;
+            }
+
+            .navbar > .btn {
+                padding: 12px 18px;
+            }
+
+            .hero {
+                padding: 40px 6% 50px;
+            }
+
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 35px;
+            }
+
+            .hero-text h1 {
+                font-size: clamp(38px, 9vw, 54px);
+            }
+
+            .hero-description {
+                font-size: 16px;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .hero-buttons .btn {
+                width: 100%;
+            }
+
+            .feature-card {
+                padding: 22px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 22px 12px;
+            }
+
+            .stat {
+                gap: 8px;
+            }
+
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+                font-size: 17px;
+            }
+
+            .stat strong {
+                font-size: 16px;
+            }
+
+            .stat span {
+                font-size: 11px;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .how-it-works {
+                padding: 60px 6%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- CABEÇALHO -->
+    <header class="navbar">
+
+        <a href="index.html" class="logo">
+            <span class="logo-icon">🍊</span>
+            <span>Frete Conecta</span>
+        </a>
+
+        <nav class="menu" aria-label="Menu principal">
+            <a href="para-embarcadores.html" class="active">
+                Para embarcadores
+            </a>
+
+            <a href="#como-funciona">
+                Como funciona
+            </a>
+
+            <a href="#seguranca">
+                Segurança
+            </a>
+
+            <a href="para-caminhoneiros.html">
+                Para caminhoneiros
+            </a>
+
+            <a href="login.html">
+                Entrar
+            </a>
+        </nav>
+
+        <a href="login.html" class="btn btn-orange">
+            Criar conta →
+        </a>
+
+    </header>
+
+
+    <!-- ÁREA PRINCIPAL -->
+    <main>
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <!-- TEXTO PRINCIPAL -->
+                <div class="hero-text">
+
+                    <div class="security-label">
+                        <span>🛡️</span>
+                        Plataforma segura e confiável para o seu frete.
+                    </div>
+
+                    <h1>
+                        Sua carga no destino certo, com quem você pode confiar.
+                    </h1>
+
+                    <p class="hero-description">
+                        No Frete Conecta, embarcadores encontram caminhoneiros
+                        qualificados, publicam cargas de forma simples e
+                        acompanham toda a entrega em tempo real.
+                    </p>
+
+                    <div class="hero-buttons">
+
+                        <a href="login.html" class="btn btn-orange">
+                            Publicar uma carga →
+                        </a>
+
+                        <a href="#como-funciona" class="btn btn-outline">
+                            Saiba como funciona
+                        </a>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PAINEL DE BENEFÍCIOS -->
+                <div class="feature-card" id="seguranca">
+
+                    <div class="feature-heading">
+
+                        <span class="eyebrow">
+                            Para embarcadores
+                        </span>
+
+                        <h2>
+                            Mais agilidade, menos burocracia
+                        </h2>
+
+                        <p>
+                            Gerencie suas cargas de forma prática e segura,
+                            com as ferramentas que você precisa.
+                        </p>
+
+                    </div>
+
+
+                    <div class="feature-list">
+
+                        <article class="feature-item">
+
+                            <div class="feature-icon">🚚</div>
+
+                            <div>
+                                <h3>Publique suas cargas</h3>
+
+                                <p>
+                                    Cadastre suas cargas em poucos cliques
+                                    e receba propostas de caminhoneiros
+                                    qualificados.
+                                </p>
+                            </div>
+
+                        </article>
+
+
+                        <article class="feature-item">
+
+                            <div class="feature-icon">♙</div>
+
+                            <div>
+                                <h3>Encontre o melhor motorista</h3>
+
+                                <p>
+                                    Compare propostas, consulte avaliações
+                                    e escolha o profissional ideal para
+                                    sua operação.
+                                </p>
+                            </div>
+
+                        </article>
+
+
+                        <article class="feature-item">
+
+                            <div class="feature-icon">⌖</div>
+
+                            <div>
+                                <h3>Acompanhe em tempo real</h3>
+
+                                <p>
+                                    Tenha visibilidade sobre o andamento
+                                    da sua carga, desde a coleta até
+                                    a entrega.
+                                </p>
+                            </div>
+
+                        </article>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- INDICADORES -->
+            <div class="stats">
+
+                <div class="stat">
+                    <div class="stat-icon">🚚</div>
+                    <div>
+                        <strong>+ 10.000</strong>
+                        <span>cargas publicadas</span>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-icon">👥</div>
+                    <div>
+                        <strong>+ 5.000</strong>
+                        <span>caminhoneiros ativos</span>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-icon">🛡️</div>
+                    <div>
+                        <strong>100%</strong>
+                        <span>foco na segurança</span>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-icon">◷</div>
+                    <div>
+                        <strong>24h</strong>
+                        <span>suporte especializado</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- COMO FUNCIONA -->
+        <section class="how-it-works" id="como-funciona">
+
+            <span class="section-tag">
+                Simples e eficiente
+            </span>
+
+            <h2>
+                Transportar ficou mais fácil
+            </h2>
+
+            <p class="section-description">
+                Conectamos sua empresa aos profissionais de transporte
+                para facilitar cada etapa da sua operação logística.
+            </p>
+
+
+            <div class="steps">
+
+                <article class="step">
+
+                    <div class="step-number">01</div>
+
+                    <h3>Cadastre sua carga</h3>
+
+                    <p>
+                        Informe origem, destino, tipo de mercadoria,
+                        peso e data desejada para o transporte.
+                    </p>
+
+                </article>
+
+
+                <article class="step">
+
+                    <div class="step-number">02</div>
+
+                    <h3>Receba propostas</h3>
+
+                    <p>
+                        Analise as opções disponíveis e escolha o
+                        caminhoneiro que melhor atende às suas necessidades.
+                    </p>
+
+                </article>
+
+
+                <article class="step">
+
+                    <div class="step-number">03</div>
+
+                    <h3>Acompanhe a entrega</h3>
+
+                    <p>
+                        Consulte o andamento do transporte e mantenha
+                        sua operação organizada em um só lugar.
+                    </p>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- CHAMADA FINAL -->
+        <section class="final-cta">
+
+            <h2>
+                Pronto para conectar sua carga?
+            </h2>
+
+            <p>
+                Simplifique sua logística e encontre novas oportunidades
+                de transporte com o Frete Conecta.
+            </p>
+
+            <a href="login.html" class="btn btn-orange">
+                Começar agora →
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <!-- RODAPÉ -->
+    <footer>
+        © 2026 Frete Conecta. Conectando cargas e caminhos.
+    </footer>
+
+</body>
+</html>
+```
