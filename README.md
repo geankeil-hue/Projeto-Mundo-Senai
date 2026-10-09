@@ -1,4 +1,4 @@
-# 🚚 ConectaFrete
+# 🚚 NONO
 
 ## 📌 Sobre o projeto
 
