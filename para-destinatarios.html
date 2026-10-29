@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Para Destinatários | Frete Conecta</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #0a223d;
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 20px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 36px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 30px;
+      font-weight: bold;
+      text-decoration: none;
+      color: #fff;
+    }
+    .user-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .user-badge, .user-area-link, .user-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .user-badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .user-area-link {
+      background: rgba(255,115,0,0.12);
+      color: #ffbd7d;
+      border: 1px solid rgba(255,155,67,0.35);
+    }
+    .user-logout-btn {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .card {
+      background: #f4f8fc;
+      color: #0e233d;
+      border-radius: 20px;
+      padding: 34px 28px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+    }
+    h1 {
+      font-size: clamp(32px, 4vw, 52px);
+      margin-bottom: 16px;
+    }
+    p {
+      font-size: 18px;
+      line-height: 1.6;
+      color: #4e6178;
+      max-width: 760px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px,1fr));
+      gap: 20px;
+      margin-top: 28px;
+    }
+    .item {
+      background: #fff;
+      border: 1px solid #dfe9f3;
+      border-radius: 16px;
+      padding: 22px 18px;
+    }
+    .item .icon { font-size: 30px; margin-bottom: 10px; }
+    .item h3 { margin-bottom: 8px; }
+    .item p { font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="index.html" class="logo"><span>🍊</span><span>Frete Conecta</span></a>
+      <div class="user-panel" aria-live="polite"></div>
+    </div>
+
+    <section class="card">
+      <h1>Área do destinatário da carga</h1>
+      <p>Veja os status das entregas, acompanhe a chegada, confirme recebimento e tenha visão clara de tudo o que foi entregue pela carga publicada.</p>
+
+      <div class="grid">
+        <div class="item">
+          <div class="icon">📦</div>
+          <h3>Recebimento</h3>
+          <p>Confirme quando a carga chegou ao destino.</p>
+        </div>
+
+        <div class="item">
+          <div class="icon">📍</div>
+          <h3>Tracking</h3>
+          <p>Acompanhe a rota em tempo real do transporte.</p>
+        </div>
+
+        <div class="item">
+          <div class="icon">✅</div>
+          <h3>Entrega</h3>
+          <p>Veja o histórico e o status final da entrega.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    FreteConectaAuth.requireAuth('destinatario', 'login-destinatario.html');
+    FreteConectaAuth.setupUserMenu({
+      containerSelector: '.user-panel',
+      loginLink: 'login-destinatario.html',
+      redirectAfterLogout: 'index.html'
+    });
+  </script>
+</body>
+</html>

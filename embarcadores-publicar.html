@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Publicar carga | Frete Conecta</title>
+  <style>
+    :root {
+      --azul-escuro: #071d31;
+      --azul: #0d2d46;
+      --azul-claro: #dfeefb;
+      --laranja: #ff7a00;
+      --laranja-escuro: #de6800;
+      --texto: #10314a;
+      --fundo: #f4f8fc;
+      --verde: #1b8f5a;
+      --vermelho: #b42318;
+      --cinza: #5d7286;
+      --linha: rgba(16, 49, 74, 0.12);
+      --branco: #ffffff;
+      --sombra: 0 22px 60px rgba(8, 25, 38, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, var(--azul-escuro) 0%, #0d2b47 100%);
+      color: var(--branco);
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    .logo-icon {
+      font-size: 36px;
+    }
+
+    .user-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .user-badge,
+    .user-area-link,
+    .user-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .user-area-link {
+      background: rgba(255,122,0,0.12);
+      border-color: rgba(255,122,0,0.4);
+      color: #ffd4a7;
+    }
+
+    .main-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: var(--sombra);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(255,122,0,0.18), rgba(255,255,255,0.02));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 34px 28px;
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #dbeaf7;
+      font-size: 1.05rem;
+      max-width: 760px;
+      line-height: 1.7;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .panel {
+      background: rgba(244,248,252,0.96);
+      border: 1px solid var(--linha);
+      border-radius: 22px;
+      color: var(--texto);
+      padding: 24px 22px;
+    }
+
+    .panel h2 {
+      margin: 0 0 20px;
+      font-size: 1.9rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: #384f63;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #cfe0ee;
+      background: #fff;
+      color: var(--texto);
+      border-radius: 12px;
+      padding: 13px 14px;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--laranja);
+      box-shadow: 0 0 0 4px rgba(255, 122, 0, 0.12);
+    }
+
+    .field textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .submit-row {
+      margin-top: 22px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 22px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+    }
+
+    .btn-primary {
+      background: var(--laranja);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--laranja-escuro);
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .list-header h3 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(27, 143, 90, 0.08);
+      color: var(--verde);
+      border: 1px solid rgba(27, 143, 90, 0.2);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .cargas-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .carga-card {
+      background: #fff;
+      border: 1px solid var(--linha);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .carga-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .carga-top h4 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .valor {
+      font-weight: 800;
+      color: var(--laranja-escuro);
+    }
+
+    .carga-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+      margin: 0 0 10px;
+      color: #4b6479;
+      font-size: 0.93rem;
+    }
+
+    .carga-meta div {
+      background: #f3f7fb;
+      border: 1px solid #e2edf5;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .obs {
+      color: #48627f;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      border: 1px dashed #cfe0ee;
+      border-radius: 12px;
+      background: #f9fbfd;
+      color: var(--cinza);
+      font-weight: 700;
+      text-align: center;
+      padding: 18px;
+    }
+
+    .mensagem {
+      display: none;
+      margin-top: 18px;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .mensagem.success {
+      display: block;
+      background: rgba(27, 143, 90, 0.08);
+      color: var(--verde);
+      border: 1px solid rgba(27, 143, 90, 0.2);
+    }
+
+    .mensagem.error {
+      display: block;
+      background: rgba(180, 35, 24, 0.08);
+      color: var(--vermelho);
+      border: 1px solid rgba(180, 35, 24, 0.2);
+    }
+
+    @media (max-width: 900px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding-inline: 14px;
+      }
+
+      .hero,
+      .panel {
+        padding: 18px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div class="logo" aria-label="Frete Conecta">
+        <span class="logo-icon">🍊</span>
+        <span>Frete Conecta</span>
+      </div>
+
+      <div class="user-panel" aria-live="polite"></div>
+    </header>
+
+    <main class="main-card">
+      <section class="hero">
+        <h1>Publicar cargas como embarcador</h1>
+        <p>Cadastre suas cargas, escolha a região de publicação e conecte seu frete aos caminhoneiros certos de forma simples e segura.</p>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel">
+          <h2>Nova carga</h2>
+
+          <form id="cargoForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="origem">Origem</label>
+                <input id="origem" name="origem" type="text" placeholder="Ex.: São Paulo - SP" required />
+              </div>
+
+              <div class="field">
+                <label for="destino">Destino</label>
+                <input id="destino" name="destino" type="text" placeholder="Ex.: Curitiba - PR" required />
+              </div>
+
+              <div class="field">
+                <label for="tipo">Tipo da carga</label>
+                <select id="tipo" name="tipo" required>
+                  <option value="">Selecione</option>
+                  <option value="Granel">Granel</option>
+                  <option value="Carga seca">Carga seca</option>
+                  <option value="Refrigerado">Refrigerado</option>
+                  <option value="Sider">Sider</option>
+                  <option value="Agrícola">Agrícola</option>
+                  <option value="Eletrônicos">Eletrônicos</option>
+                  <option value="Bebidas">Bebidas</option>
+                  <option value="Alimentos">Alimentos</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="peso">Peso / volume</label>
+                <input id="peso" name="peso" type="text" placeholder="Ex.: 18,5 toneladas" required />
+              </div>
+
+              <div class="field">
+                <label for="regiaoOrigem">Região de origem</label>
+                <select id="regiaoOrigem" name="regiaoOrigem" required>
+                  <option value="">Selecione</option>
+                  <option value="São Paulo - SP">São Paulo - SP</option>
+                  <option value="Rio de Janeiro - RJ">Rio de Janeiro - RJ</option>
+                  <option value="Minas Gerais - MG">Minas Gerais - MG</option>
+                  <option value="Paraná - PR">Paraná - PR</option>
+                  <option value="Santa Catarina - SC">Santa Catarina - SC</option>
+                  <option value="Rio Grande do Sul - RS">Rio Grande do Sul - RS</option>
+                  <option value="Bahia - BA">Bahia - BA</option>
+                  <option value="Pernambuco - PE">Pernambuco - PE</option>
+                  <option value="Ceará - CE">Ceará - CE</option>
+                  <option value="Goiás - GO">Goiás - GO</option>
+                  <option value="Brasília - DF">Brasília - DF</option>
+                  <option value="Nordeste">Nordeste</option>
+                  <option value="Sudeste">Sudeste</option>
+                  <option value="Sul">Sul</option>
+                  <option value="Centro-Oeste">Centro-Oeste</option>
+                  <option value="Brasil">Brasil</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="regiaoPublicacao">Região de publicação</label>
+                <select id="regiaoPublicacao" name="regiaoPublicacao" required>
+                  <option value="">Selecione</option>
+                  <option value="São Paulo - SP">São Paulo - SP</option>
+                  <option value="Rio de Janeiro - RJ">Rio de Janeiro - RJ</option>
+                  <option value="Minas Gerais - MG">Minas Gerais - MG</option>
+                  <option value="Paraná - PR">Paraná - PR</option>
+                  <option value="Santa Catarina - SC">Santa Catarina - SC</option>
+                  <option value="Rio Grande do Sul - RS">Rio Grande do Sul - RS</option>
+                  <option value="Bahia - BA">Bahia - BA</option>
+                  <option value="Pernambuco - PE">Pernambuco - PE</option>
+                  <option value="Ceará - CE">Ceará - CE</option>
+                  <option value="Goiás - GO">Goiás - GO</option>
+                  <option value="Brasília - DF">Brasília - DF</option>
+                  <option value="Nordeste">Nordeste</option>
+                  <option value="Sudeste">Sudeste</option>
+                  <option value="Sul">Sul</option>
+                  <option value="Centro-Oeste">Centro-Oeste</option>
+                  <option value="Brasil">Brasil</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="data">Data prevista</label>
+                <input id="data" name="data" type="date" required />
+              </div>
+
+              <div class="field">
+                <label for="valor">Valor do frete</label>
+                <input id="valor" name="valor" type="text" placeholder="Ex.: R$ 4.800,00" required />
+              </div>
+
+              <div class="field full">
+                <label for="observacoes">Observações</label>
+                <textarea id="observacoes" name="observacoes" placeholder="Descreva detalhes da carga, requisitos especiais e observações importantes."></textarea>
+              </div>
+            </div>
+
+            <div class="submit-row">
+              <button type="submit" class="btn btn-primary">Publicar carga</button>
+            </div>
+          </form>
+
+          <div id="mensagem" class="mensagem" aria-live="polite"></div>
+        </div>
+
+        <aside class="panel">
+          <div class="list-header">
+            <h3>Minhas cargas</h3>
+            <span class="status-pill">● Ativas</span>
+          </div>
+
+          <div id="cargasLista" class="cargas-list" aria-live="polite"></div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const usuarioAtualPagina = FreteConectaAuth.currentUser();
+
+    if (!usuarioAtualPagina) {
+      window.location.replace('login-embarcadores.html');
+    } else if (usuarioAtualPagina.role !== 'embarcador') {
+      const rotaCorreta = usuarioAtualPagina.role === 'destinatario'
+        ? 'para-destinatarios.html'
+        : 'para-caminhoneiros.html';
+      window.location.replace(rotaCorreta);
+    }
+
+    FreteConectaAuth.requireAuth('embarcador', 'login-embarcadores.html');
+    FreteConectaAuth.setupUserMenu({
+      containerSelector: '.user-panel',
+      loginLink: 'login-embarcadores.html',
+      redirectAfterLogout: 'index.html'
+    });
+
+    const STORAGE_KEY = 'freteConectaCargas';
+    const cargoForm = document.getElementById('cargoForm');
+    const cargasLista = document.getElementById('cargasLista');
+    const mensagem = document.getElementById('mensagem');
+
+    function mostrarMensagem(texto, tipo) {
+      mensagem.textContent = texto;
+      mensagem.className = 'mensagem ' + tipo;
+    }
+
+    function formatCurrency(value) {
+      return Number(value || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    function getMinhasCargas() {
+      const usuario = FreteConectaAuth.currentUser();
+      if (!usuario) return [];
+
+      return FreteConectaAuth.getCargas()
+        .filter((carga) => String(carga.userId || '') === String(usuario.id || ''))
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
+    function renderCargas() {
+      const minhas = getMinhasCargas();
+
+      if (!minhas.length) {
+        cargasLista.innerHTML = '<div class="empty">Você ainda não publicou nenhuma carga. Cadastre sua primeira oferta para aparecer aqui.</div>';
+        return;
+      }
+
+      cargasLista.innerHTML = minhas.map((carga) => `
+        <article class="carga-card">
+          <div class="carga-top">
+            <h4>${(carga.tipo || 'Carga').toString()}</h4>
+            <span class="valor">${carga.valor || 'R$ 0,00'}</span>
+          </div>
+
+          <div class="carga-meta">
+            <div><strong>Origem:</strong> ${carga.origem || '-'}</div>
+            <div><strong>Destino:</strong> ${carga.destino || '-'}</div>
+            <div><strong>Peso:</strong> ${carga.peso || '-'}</div>
+            <div><strong>Data:</strong> ${carga.data ? new Date(carga.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</div>
+          </div>
+
+          <div class="obs">${carga.observacoes ? carga.observacoes : 'Sem observações adicionais.'}</div>
+        </article>
+      `).join('');
+    }
+
+    cargoForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      try {
+        const dados = {
+          origem: document.getElementById('origem').value.trim(),
+          destino: document.getElementById('destino').value.trim(),
+          tipo: document.getElementById('tipo').value.trim(),
+          regiaoOrigem: document.getElementById('regiaoOrigem').value.trim(),
+          regiaoPublicacao: document.getElementById('regiaoPublicacao').value.trim(),
+          peso: document.getElementById('peso').value.trim(),
+          data: document.getElementById('data').value.trim(),
+          valor: document.getElementById('valor').value.trim(),
+          observacoes: document.getElementById('observacoes').value.trim()
+        };
+
+        const resultado = FreteConectaAuth.publishCarga(dados);
+
+        cargoForm.reset();
+        renderCargas();
+        mostrarMensagem('✅ Carga publicada com sucesso e enviada para visualização.', 'success');
+        console.log('Carga publicada:', resultado);
+      } catch (error) {
+        mostrarMensagem('⚠️ ' + (error && error.message ? error.message : 'Não foi possível publicar a carga.'), 'error');
+      }
+    });
+
+    renderCargas();
+  </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recuperar senha | Frete Conecta</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #0a223d, #153d67);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #10253d;
+    }
+    .card {
+      width: min(90vw, 500px);
+      background: #f5f8fc;
+      border-radius: 18px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+      padding: 30px 26px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.7rem;
+      margin-bottom: 18px;
+      color: #0c2340;
+    }
+    h2 {
+      text-align: center;
+      margin: 0 0 8px;
+      font-size: 2rem;
+    }
+    p {
+      margin: 0 0 24px;
+      text-align: center;
+      color: #4f647a;
+      line-height: 1.5;
+    }
+    .campo {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: #183655;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #cfe0f0;
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus {
+      border-color: #f7941d;
+      box-shadow: 0 0 0 3px rgba(247,148,29,0.15);
+    }
+    button {
+      width: 100%;
+      border: none;
+      background: linear-gradient(135deg, #f7931e, #ffb545);
+      color: #fff;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 12px;
+    }
+    .mensagem {
+      display: none;
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .link-voltar {
+      display: block;
+      text-align: center;
+      margin-top: 18px;
+      color: #195a9a;
+      text-decoration: none;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand"><span>🍊</span> <span>Frete Conecta</span></div>
+    <h2>Redefinir senha</h2>
+    <p>Digite o código recebido por e-mail e cadastre uma nova senha para sua conta.</p>
+
+    <form id="formResetSenha">
+      <div class="campo">
+        <label for="email">E-mail cadastrado</label>
+        <input id="email" type="email" placeholder="seuemail@exemplo.com" required />
+      </div>
+
+      <div class="campo">
+        <label for="codigo">Código de recuperação</label>
+        <input id="codigo" type="text" placeholder="Ex: FRC-ABC123-123456" required />
+      </div>
+
+      <div class="campo">
+        <label for="novaSenha">Nova senha</label>
+        <input id="novaSenha" type="password" placeholder="Digite a nova senha" required />
+      </div>
+
+      <div class="campo">
+        <label for="confirmarSenha">Confirmar nova senha</label>
+        <input id="confirmarSenha" type="password" placeholder="Confirme a nova senha" required />
+      </div>
+
+      <button type="submit">Salvar nova senha</button>
+      <div id="mensagem" class="mensagem" aria-live="polite"></div>
+    </form>
+
+    <a href="login.html" class="link-voltar">Voltar para o login</a>
+  </main>
+
+  <script src="auth.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const emailPreenchido = params.get('email');
+    const redirectParam = params.get('redirect');
+    const emailInput = document.getElementById('email');
+    const voltarLink = document.querySelector('.link-voltar');
+    const validRedirects = ['login.html', 'login-embarcadores.html', 'login-destinatario.html'];
+    const savedRedirect = (() => {
+      try {
+        return localStorage.getItem('freteConectaRecoveryOrigin');
+      } catch (error) {
+        return null;
+      }
+    })();
+    const redirectPage = validRedirects.includes(redirectParam)
+      ? redirectParam
+      : validRedirects.includes(savedRedirect)
+        ? savedRedirect
+        : 'login.html';
+
+    if (voltarLink) {
+      voltarLink.href = redirectPage;
+    }
+
+    if (emailPreenchido) {
+      emailInput.value = decodeURIComponent(emailPreenchido);
+    }
+
+    const form = document.getElementById('formResetSenha');
+    const mensagem = document.getElementById('mensagem');
+
+    function mostrarMensagem(texto, sucesso) {
+      mensagem.style.display = 'block';
+      mensagem.style.background = sucesso ? '#e8f8ee' : '#ffe5e5';
+      mensagem.style.color = sucesso ? '#127d42' : '#b42318';
+      mensagem.textContent = texto;
+    }
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const codigo = document.getElementById('codigo').value.trim();
+      const novaSenha = document.getElementById('novaSenha').value.trim();
+      const confirmarSenha = document.getElementById('confirmarSenha').value.trim();
+
+      if (!email || !codigo || !novaSenha || !confirmarSenha) {
+        mostrarMensagem('⚠️ Preencha todos os campos.', false);
+        return;
+      }
+
+      if (novaSenha.length < 6) {
+        mostrarMensagem('⚠️ Sua nova senha deve ter pelo menos 6 caracteres.', false);
+        return;
+      }
+
+      if (novaSenha !== confirmarSenha) {
+        mostrarMensagem('⚠️ As senhas não conferem.', false);
+        return;
+      }
+
+      const role = redirectPage === 'login-embarcadores.html'
+        ? 'embarcador'
+        : redirectPage === 'login-destinatario.html'
+          ? 'destinatario'
+          : 'caminhoneiro';
+
+      const resultado = FreteConectaAuth.resetPassword(email, codigo, novaSenha, role);
+
+      if (!resultado.success) {
+        mostrarMensagem('⚠️ ' + resultado.message, false);
+        return;
+      }
+
+      mostrarMensagem('✓ ' + resultado.message + ' Redirecionando para o login...', true);
+
+      setTimeout(() => {
+        window.location.href = redirectPage;
+      }, 1800);
+    });
+  </script>
+</body>
+</html>

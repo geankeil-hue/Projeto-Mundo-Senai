@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Destinatário | Frete Conecta</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #0a2240, #081d33);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .page { display: flex; justify-content: center; padding: 40px 20px; }
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: #f7fafc;
+      color: #102847;
+      border-radius: 18px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+      padding: 32px 28px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-weight: bold;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+    .brand span:first-child { font-size: 30px; }
+    h1 { text-align: center; font-size: 30px; margin-bottom: 8px; }
+    .subtitulo {
+      text-align: center;
+      color: #5d7287;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .campo { margin-bottom: 18px; }
+    .campo label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .campo input {
+      width: 100%;
+      padding: 14px 12px;
+      border-radius: 10px;
+      border: 1px solid #ccd9e8;
+      outline: none;
+      font-size: 15px;
+    }
+    .campo input:focus { border-color: #ff7200; box-shadow: 0 0 0 3px rgba(255,114,0,0.12); }
+    .btn {
+      width: 100%;
+      background: #ff7200;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 18px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #e86400; }
+    .voltar {
+      display: block;
+      text-align: center;
+      margin-top: 18px;
+      color: #145da5;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .mensagem {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="card">
+      <div class="brand"><span>🍊</span><span>Frete Conecta</span></div>
+      <h1>Cadastro de destinatário</h1>
+      <p class="subtitulo">Crie sua conta para acompanhar a chegada da carga e receber avisos de entrega.</p>
+
+      <form id="cadastroForm">
+        <div class="campo">
+          <label for="nome">Nome completo</label>
+          <input type="text" id="nome" placeholder="Digite seu nome completo" required />
+        </div>
+
+        <div class="campo">
+          <label for="cpf">CPF</label>
+          <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required />
+        </div>
+
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" placeholder="seuemail@exemplo.com" required />
+        </div>
+
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" placeholder="Crie uma senha" minlength="6" required />
+        </div>
+
+        <button type="submit" class="btn">Cadastrar destinatário</button>
+        <div id="mensagem" class="mensagem"></div>
+      </form>
+
+      <a href="login-destinatario.html" class="voltar">Já tenho conta</a>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const cpf = document.getElementById('cpf');
+    cpf.addEventListener('input', function () {
+      let valor = this.value.replace(/\D/g, '');
+      if (valor.length > 11) valor = valor.slice(0, 11);
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      this.value = valor;
+    });
+
+    document.getElementById('cadastroForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const nome = document.getElementById('nome').value.trim();
+      const cpfValue = document.getElementById('cpf').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+      const mensagem = document.getElementById('mensagem');
+
+      if (!nome || !cpfValue || !email || !senha) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe5e5';
+        mensagem.style.color = '#c62828';
+        mensagem.textContent = '⚠️ Preencha todos os campos para continuar.';
+        return;
+      }
+
+      if (senha.length < 6) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe5e5';
+        mensagem.style.color = '#c62828';
+        mensagem.textContent = '⚠️ A senha deve ter pelo menos 6 caracteres.';
+        return;
+      }
+
+      try {
+        FreteConectaAuth.register({
+          nome,
+          cpf: cpfValue,
+          email,
+          senha,
+          role: 'destinatario'
+        });
+
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#e2f7e8';
+        mensagem.style.color = '#16823b';
+        mensagem.textContent = '✓ Cadastro realizado com sucesso! Redirecionando para o login...';
+
+        setTimeout(() => {
+          window.location.href = 'login-destinatario.html';
+        }, 1500);
+      } catch (erro) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe5e5';
+        mensagem.style.color = '#c62828';
+        mensagem.textContent = '⚠️ ' + erro.message;
+      }
+    });
+  </script>
+</body>
+</html>

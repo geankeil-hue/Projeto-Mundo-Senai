@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Embarcadores | Frete Conecta</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #061d32, #0a2d49 50%, #0f3a5c);
+      color: white;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+    }
+
+    .card {
+      background: #f5f8fb;
+      color: #0f2742;
+      border-radius: 22px;
+      padding: 32px 28px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+    }
+
+    .badge {
+      width: 52px;
+      height: 5px;
+      background: #ff7000;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: clamp(30px, 4vw, 44px);
+      margin-bottom: 8px;
+    }
+
+    .subtitulo {
+      color: #69839c;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .campo.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #183254;
+    }
+
+    input {
+      width: 100%;
+      height: 52px;
+      border-radius: 12px;
+      border: 1px solid #c7d5e4;
+      background: white;
+      color: #15314d;
+      font-size: 15px;
+      padding: 0 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #ff7000;
+      box-shadow: 0 0 0 4px rgba(255,112,0,0.10);
+    }
+
+    .btn {
+      margin-top: 18px;
+      width: 100%;
+      height: 54px;
+      border: none;
+      border-radius: 12px;
+      background: #ff7000;
+      color: white;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .btn:hover {
+      background: #eb6500;
+      transform: translateY(-1px);
+    }
+
+    .mensagem {
+      display: none;
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .login-link {
+      margin-top: 18px;
+      text-align: center;
+      color: #214c6b;
+      font-weight: 700;
+    }
+
+    .login-link a {
+      color: #ff7000;
+    }
+
+    @media (max-width: 700px) {
+      form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="badge"></div>
+      <h1>Cadastro de embarcador</h1>
+      <p class="subtitulo">Crie sua conta para publicar cargas, encontrar caminhoneiros e acompanhar entregas com mais segurança.</p>
+
+      <form id="cadastroEmbarcadorForm">
+        <div class="campo">
+          <label for="nomeEmbarcador">Nome completo</label>
+          <input type="text" id="nomeEmbarcador" placeholder="Digite seu nome completo" required />
+        </div>
+
+        <div class="campo">
+          <label for="empresaEmbarcador">Empresa</label>
+          <input type="text" id="empresaEmbarcador" placeholder="Nome da empresa" required />
+        </div>
+
+        <div class="campo">
+          <label for="cnpjEmbarcador">CNPJ</label>
+          <input type="text" id="cnpjEmbarcador" placeholder="00.000.000/0000-00" maxlength="18" required />
+        </div>
+
+        <div class="campo">
+          <label for="emailEmbarcador">E-mail</label>
+          <input type="email" id="emailEmbarcador" placeholder="seuemail@empresa.com" required />
+        </div>
+
+        <div class="campo full">
+          <label for="senhaEmbarcador">Senha</label>
+          <input type="password" id="senhaEmbarcador" placeholder="Crie uma senha com pelo menos 6 caracteres" minlength="6" required />
+        </div>
+
+        <button type="submit" class="btn">Criar conta</button>
+      </form>
+
+      <div id="mensagem" class="mensagem"></div>
+
+      <p class="login-link">Já tem uma conta? <a href="login-embarcadores.html">Entrar</a></p>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const cnpj = document.getElementById('cnpjEmbarcador');
+
+    cnpj.addEventListener('input', function () {
+      let valor = this.value.replace(/\D/g, '').substring(0, 14);
+      valor = valor.replace(/(\d{2})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d{1,4})$/, '$1/$2');
+      valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+      this.value = valor;
+    });
+
+    const form = document.getElementById('cadastroEmbarcadorForm');
+    const mensagem = document.getElementById('mensagem');
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const nome = document.getElementById('nomeEmbarcador').value.trim();
+      const empresa = document.getElementById('empresaEmbarcador').value.trim();
+      const cnpjValue = document.getElementById('cnpjEmbarcador').value.trim();
+      const email = document.getElementById('emailEmbarcador').value.trim();
+      const senha = document.getElementById('senhaEmbarcador').value.trim();
+
+      if (!nome || !empresa || !cnpjValue || !email || !senha) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe2e2';
+        mensagem.style.color = '#b42318';
+        mensagem.textContent = '⚠️ Preencha todos os campos para continuar.';
+        return;
+      }
+
+      if (senha.length < 6) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe2e2';
+        mensagem.style.color = '#b42318';
+        mensagem.textContent = '⚠️ A senha deve ter pelo menos 6 caracteres.';
+        return;
+      }
+
+      try {
+        FreteConectaAuth.register({
+          nome: nome + ' (' + empresa + ')',
+          cnpj: cnpjValue,
+          email,
+          senha,
+          role: 'embarcador'
+        });
+
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#e8f8ee';
+        mensagem.style.color = '#127d42';
+        mensagem.textContent = '✓ Cadastro realizado com sucesso! Redirecionando para o login...';
+
+        setTimeout(() => {
+          window.location.href = 'login-embarcadores.html';
+        }, 1500);
+      } catch (erro) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe2e2';
+        mensagem.style.color = '#b42318';
+        mensagem.textContent = '⚠️ ' + erro.message;
+      }
+    });
+  </script>
+</body>
+</html>

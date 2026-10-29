@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frete Conecta</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <style>
+    .user-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: 12px;
+      flex-wrap: wrap;
+    }
+
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .user-area-link,
+    .user-login-link,
+    .user-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      transition: 0.25s ease;
+    }
+
+    .user-area-link,
+    .user-login-link {
+      background: rgba(255, 115, 0, 0.12);
+      color: #ffb067;
+      border: 1px solid rgba(255, 115, 0, 0.35);
+    }
+
+    .user-logout-btn {
+      background: transparent;
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .user-logout-btn:hover,
+    .user-login-link:hover,
+    .user-area-link:hover {
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <span class="logo-icon">🍊</span>
+      <span class="logo-text">Frete Conecta</span>
+    </div>
+
+    <nav class="nav-links" aria-label="Menu principal">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="login.html" data-role-route="caminhoneiro" data-area-page="para-caminhoneiros.html" data-login-page="login.html">Para caminhoneiros</a>
+      <a href="embarcadores-publicar.html" data-role-route="embarcador" data-area-page="embarcadores-publicar.html" data-login-page="login-embarcadores.html">Para embarcadores</a>
+      <a href="login-destinatario.html" data-role-route="destinatario" data-area-page="para-destinatarios.html" data-login-page="login-destinatario.html">Para destinatários</a>
+    </nav>
+    <div class="user-panel" aria-live="polite"></div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="badge-pill">
+          <span>🛡️</span> Fretes verificados. Pagamento protegido.
+        </div>
+
+        <h1>A carga certa encontra o caminhoneiro certo.</h1>
+
+        <p class="descrição">
+          Conectamos quem precisa transportar a quem move o Brasil — com agilidade, segurança e transparência de ponta a ponta.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="login.html" class="Encontrar-cargas">Entrar como caminhoneiro &rarr;</a>
+          <a href="login-embarcadores.html" class="Publicar-uma-carga">Entrar como embarcador</a>
+        </div>
+
+        <div class="hero-features" style="margin-top: 18px;">
+          <span>🚚 Caminhoneiros</span>
+          <span>📦 Embarcadores</span>
+          <span>📍 Destinatários da carga</span>
+        </div>
+
+        <div class="hero-features">
+          <span>✔ CNH verificada</span>
+          <span>✔ Carga rastreada</span>
+          <span>✔ Pagamento garantido</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="info-grid" id="como-funciona">
+    <div class="info-card">
+      <span class="info-tag">Como funciona</span>
+      <h3>1. Publica ou encontra cargas</h3>
+      <p>Embarcadores anunciam fretes e caminhoneiros acessam oportunidades verificadas em tempo real.</p>
+    </div>
+
+    <div class="info-card">
+      <span class="info-tag">Controle</span>
+      <h3>2. Acompanhe cada etapa</h3>
+      <p>Monitoramento, histórico e comunicação em um único painel, com mais segurança para todos.</p>
+    </div>
+
+    <div class="info-card" id="seguranca">
+      <span class="info-tag">Segurança</span>
+      <h3>3. Negócios protegidos</h3>
+      <p>Pagamento transparente, verificações de documentos e rastreio da operação em todas as etapas.</p>
+    </div>
+  </section>
+
+  <script src="auth.js"></script>
+  <script>
+    FreteConectaAuth.setupUserMenu({
+      containerSelector: '.user-panel',
+      loginLink: 'login-embarcadores.html',
+      redirectAfterLogout: 'index.html'
+    });
+
+    const roleLinks = document.querySelectorAll('[data-role-route]');
+    const usuarioAtual = FreteConectaAuth.currentUser();
+
+    roleLinks.forEach((link) => {
+      const role = link.dataset.roleRoute;
+      const loginPage = link.dataset.loginPage || (
+        role === 'embarcador'
+          ? 'login-embarcadores.html'
+          : role === 'destinatario'
+            ? 'login-destinatario.html'
+            : 'login.html'
+      );
+      const areaPage = link.dataset.areaPage || FreteConectaAuth.getRoleHome(role);
+
+      if (role === 'embarcador') {
+        link.href = 'embarcadores-publicar.html';
+      }
+
+      if (usuarioAtual && usuarioAtual.role === role) {
+        link.href = areaPage;
+      }
+
+      if (usuarioAtual && usuarioAtual.role !== role && role === 'embarcador') {
+        link.href = 'embarcadores-publicar.html';
+      }
+
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+
+        const usuario = FreteConectaAuth.currentUser();
+
+        if (!usuario) {
+          window.location.href = loginPage;
+          return;
+        }
+
+        if (usuario.role === role) {
+          window.location.href = areaPage;
+          return;
+        }
+
+        if (role === 'embarcador') {
+          window.location.href = 'embarcadores-publicar.html';
+          return;
+        }
+
+        window.location.href = loginPage;
+      });
+    });
+  </script>
+</body>
+</html>

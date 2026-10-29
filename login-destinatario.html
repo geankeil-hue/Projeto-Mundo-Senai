@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login para Destinatário | Frete Conecta</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #0a2240, #081d33);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: #f6f9fc;
+      color: #102847;
+      border-radius: 18px;
+      padding: 30px 26px;
+      box-shadow: 0 26px 80px rgba(0,0,0,0.22);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 27px;
+      font-weight: bold;
+      margin-bottom: 18px;
+    }
+    .brand span:first-child {
+      font-size: 30px;
+    }
+    .card h2 {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+    .subtitulo {
+      text-align: center;
+      color: #5f7285;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .campo { margin-bottom: 18px; }
+    .campo label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .campo .input-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #d5dfeb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .campo .input-box .icone {
+      width: 46px;
+      text-align: center;
+      color: #6f8195;
+      font-size: 18px;
+    }
+    .campo input {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 16px 14px 16px 0;
+      font-size: 15px;
+      background: transparent;
+      color: #102847;
+    }
+    .senha-toggle {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 14px 0 0;
+    }
+    .opcoes {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0 20px;
+      font-size: 14px;
+      color: #53657a;
+    }
+    .lembrar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .esqueceu {
+      cursor: pointer;
+      color: #0d5aa7;
+      font-weight: bold;
+    }
+    .btn-login,
+    .btn-secundario {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 18px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: .25s ease;
+    }
+    .btn-login {
+      background: #ff7200;
+      color: #fff;
+    }
+    .btn-login:hover { background: #e86400; }
+    .btn-secundario {
+      background: #edf4fb;
+      color: #173d63;
+      border: 1px solid #bfd1e6;
+      margin-top: 16px;
+    }
+    .btn-secundario:hover { background: #e6f1fb; }
+    .links-rapidos {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #dfe8f2;
+      text-align: center;
+    }
+    .links-rapidos p {
+      font-size: 14px;
+      color: #53657a;
+      margin-bottom: 8px;
+    }
+    .links-rapidos a {
+      display: block;
+      color: #1464b5;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 6px 0;
+    }
+    .mensagem {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="card" aria-label="Login de destinatário da carga">
+      <div class="brand">
+        <span>🍊</span>
+        <span>Frete Conecta</span>
+      </div>
+
+      <h2>Login de destinatário</h2>
+      <p class="subtitulo">Acesso exclusivo para quem vai receber a carga publicada pelo embarcador.</p>
+
+      <form onsubmit="return false;">
+        <div class="campo">
+          <label for="email">E-mail ou CPF</label>
+          <div class="input-box">
+            <span class="icone">✉</span>
+            <input type="text" id="email" placeholder="Digite seu e-mail ou CPF" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <div class="input-box">
+            <span class="icone">🔒</span>
+            <input type="password" id="senha" placeholder="Digite sua senha" />
+            <button type="button" id="botaoSenha" class="senha-toggle" aria-label="Mostrar senha">👁</button>
+          </div>
+        </div>
+
+        <div class="opcoes">
+          <label class="lembrar"><input type="checkbox" /> Lembrar de mim</label>
+          <span class="esqueceu" onclick="esqueciSenha()">Esqueceu a senha?</span>
+        </div>
+
+        <button class="btn-login" type="button" onclick="entrarDestinatario()">Entrar como destinatário</button>
+
+        <button class="btn-secundario" type="button" onclick="window.location.href='cadastro-destinatario.html'">Criar conta de destinatário</button>
+
+        <div class="links-rapidos">
+          <p>Outros acessos</p>
+          <a href="login.html">Login de caminhoneiros</a>
+          <a href="login-embarcadores.html">Login de embarcadores</a>
+        </div>
+
+        <div id="mensagem" class="mensagem"></div>
+      </form>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const usuarioAtual = FreteConectaAuth.currentUser();
+    if (usuarioAtual && usuarioAtual.role !== 'destinatario') {
+      localStorage.removeItem('freteConectaCurrentUser');
+    }
+
+    if (usuarioAtual && usuarioAtual.role === 'destinatario') {
+      window.location.href = 'para-destinatarios.html';
+    }
+
+    function mostrarSenha() {
+      const senha = document.getElementById('senha');
+      const botao = document.getElementById('botaoSenha');
+      if (senha.type === 'password') {
+        senha.type = 'text';
+        botao.textContent = '🙈';
+      } else {
+        senha.type = 'password';
+        botao.textContent = '👁';
+      }
+    }
+
+    document.getElementById('botaoSenha').addEventListener('click', mostrarSenha);
+
+    function entrarDestinatario() {
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+      const mensagem = document.getElementById('mensagem');
+
+      if (!email || !senha) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe4e4';
+        mensagem.style.color = '#aa1f1f';
+        mensagem.textContent = '⚠️ Preencha e-mail/CPF e senha para continuar.';
+        return;
+      }
+
+      const usuario = FreteConectaAuth.login(email, senha, 'destinatario');
+
+      if (!usuario) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe4e4';
+        mensagem.style.color = '#aa1f1f';
+        mensagem.textContent = '⚠️ E-mail/CPF ou senha inválidos para destinatário.';
+        return;
+      }
+
+      mensagem.style.display = 'block';
+      mensagem.style.background = '#e6f9ee';
+      mensagem.style.color = '#10713b';
+      mensagem.textContent = '✓ Login realizado com sucesso! Redirecionando...';
+
+      setTimeout(() => {
+        window.location.href = 'para-destinatarios.html';
+      }, 1200);
+    }
+
+    function esqueciSenha() {
+      const email = document.getElementById('email').value.trim();
+      const mensagem = document.getElementById('mensagem');
+      const resultado = FreteConectaAuth.sendPasswordRecoveryEmail(email, 'destinatario');
+
+      if (!resultado.success) {
+        mensagem.style.display = 'block';
+        mensagem.style.background = '#ffe4e4';
+        mensagem.style.color = '#aa1f1f';
+        mensagem.textContent = '⚠️ ' + resultado.message;
+        return;
+      }
+
+      mensagem.style.display = 'block';
+      mensagem.style.background = '#edf4ff';
+      mensagem.style.color = '#125ca8';
+      mensagem.textContent = '📧 Gmail de recuperação aberto para ' + resultado.email + ' com o código: ' + resultado.codigo;
+    }
+  </script>
+</body>
+</html>
