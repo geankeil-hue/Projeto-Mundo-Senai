@@ -1,4 +1,4 @@
- # 🚚 NONO
+🚚 NONO
 📌 Sobre o projeto
 O NONO é um aplicativo desenvolvido com o objetivo de conectar clientes que precisam transportar cargas a freteiros que realizam esse tipo de serviço. A plataforma facilita a comunicação entre as duas partes, permitindo que encontrem oportunidades de frete de acordo com suas necessidades e interesses.
 
