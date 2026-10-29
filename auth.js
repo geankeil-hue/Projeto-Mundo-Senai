@@ -62,23 +62,15 @@
 
     const candidates = users.filter((user) => {
       const userParsed = parseUser(user);
+      const sameRole = userParsed.role === targetRole;
       const emailMatch = normalize(userParsed.email) === valor;
       const cpfMatch = normalize(userParsed.cpf) === valor;
       const cnpjMatch = normalize(userParsed.cnpj) === valor;
       const senhaMatch = userParsed.senha === senhaDigitada;
-      return (emailMatch || cpfMatch || cnpjMatch) && senhaMatch;
+      return sameRole && (emailMatch || cpfMatch || cnpjMatch) && senhaMatch;
     });
 
-    if (!candidates.length) {
-      return null;
-    }
-
-    const exactRoleMatch = candidates.find((user) => parseUser(user).role === targetRole);
-    if (exactRoleMatch) {
-      return exactRoleMatch;
-    }
-
-    return candidates[0];
+    return candidates[0] || null;
   }
 
   window.FreteConectaAuth = {
@@ -133,6 +125,31 @@
       const current = this.currentUser();
       if (!current) {
         return false;
+      }
+
+      if (current.role === 'destinatario') {
+        document.querySelectorAll('a, button').forEach((element) => {
+          if (!element) {
+            return;
+          }
+
+          const text = (element.textContent || '').trim().toLowerCase();
+          const isCaminhoneiroLink = text.includes('para caminhoneiros');
+          const isEmbarcadorLink = text.includes('para embarcadores');
+          const isDestinatarioLink = text.includes('para destinatários');
+
+          if (isCaminhoneiroLink || isEmbarcadorLink) {
+            element.style.display = 'none';
+            element.setAttribute('aria-hidden', 'true');
+          }
+
+          if (isDestinatarioLink) {
+            element.style.display = '';
+            element.removeAttribute('aria-hidden');
+          }
+        });
+
+        return true;
       }
 
       const selectors = [
@@ -437,7 +454,7 @@
       const routes = {
         caminhoneiro: 'para-caminhoneiros.html',
         embarcador: 'embarcadores-publicar.html',
-        destinatario: 'para-destinatarios.html'
+        destinatario: 'destinatario-entregas.html'
       };
 
       return routes[roleName] || routes.caminhoneiro;
@@ -509,7 +526,7 @@
         const roleHome = {
           caminhoneiro: 'para-caminhoneiros.html',
           embarcador: 'embarcadores-publicar.html',
-          destinatario: 'para-destinatarios.html'
+          destinatario: 'destinatario-entregas.html'
         };
 
         if (current.role === 'embarcador' || current.role === 'destinatario' || current.role === 'caminhoneiro') {
@@ -545,7 +562,7 @@
       const areaPath = current.role === 'embarcador'
         ? 'embarcadores-publicar.html'
         : current.role === 'destinatario'
-          ? 'para-destinatarios.html'
+          ? 'destinatario-entregas.html'
           : 'para-caminhoneiros.html';
 
       container.innerHTML = `
@@ -582,11 +599,14 @@
 
       const jaExiste = users.some((user) => {
         const item = parseUser(user);
-        return (
-          normalize(item.email) === email ||
-          normalize(item.cpf) === cpf ||
-          normalize(item.cnpj) === cnpj
-        );
+        if (item.role !== payload.role) {
+          return false;
+        }
+
+        const valoresDoUsuario = [normalize(item.email), normalize(item.cpf), normalize(item.cnpj)].filter(Boolean);
+        const valoresIdentificadores = [email, cpf, cnpj].filter(Boolean);
+
+        return valoresIdentificadores.some((valor) => valoresDoUsuario.includes(valor));
       });
 
       if (jaExiste) {

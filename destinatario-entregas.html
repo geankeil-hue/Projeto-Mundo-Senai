@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entregas do Destinatário | Frete Conecta</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #0a223d 0%, #0f2e4a 100%);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fff;
+      font-size: 30px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .logo span:first-child { font-size: 36px; }
+    .user-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .user-badge, .user-area-link, .user-login-link, .user-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .user-badge {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .user-area-link {
+      background: rgba(255,115,0,0.12);
+      color: #ffbd7d;
+      border-color: rgba(255,155,67,0.35);
+    }
+    .user-logout-btn {
+      background: transparent;
+      color: #fff;
+    }
+    .hero {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 28px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 28px 60px rgba(0,0,0,0.18);
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffbb7d;
+      margin-bottom: 12px;
+      font-weight: bold;
+    }
+    h1 {
+      font-size: clamp(30px, 4vw, 52px);
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      max-width: 760px;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #dfeaf8;
+      margin-bottom: 24px;
+    }
+    .content {
+      display: grid;
+      grid-template-columns: 1.6fr 0.9fr;
+      gap: 22px;
+      margin-top: 28px;
+    }
+    .panel {
+      background: #f3f7fb;
+      color: #12314d;
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .panel h2 {
+      font-size: 26px;
+      margin-bottom: 18px;
+    }
+    .lista-entregas {
+      display: grid;
+      gap: 16px;
+    }
+    .entrega-card {
+      background: #fff;
+      border: 1px solid #dce6f0;
+      border-left: 6px solid transparent;
+      border-radius: 18px;
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .entrega-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(18, 31, 52, 0.08);
+    }
+    .entrega-card.selected {
+      border-left-color: #ff7c18;
+      background: #fffaf4;
+      box-shadow: 0 12px 26px rgba(255, 124, 24, 0.12);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eef6ff;
+      color: #195aa8;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #ebfff2;
+      color: #0b7a3e;
+    }
+    .rota {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: center;
+      color: #1d3557;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .rota .seta { color: #ff7c18; font-size: 22px; }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 10px 14px;
+      color: #47627d;
+      font-size: 14px;
+    }
+    .meta strong { color: #12314d; }
+    .acao {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .valor {
+      font-size: 26px;
+      font-weight: bold;
+      color: #0f6c3f;
+    }
+    .btn-selecionar {
+      border: none;
+      border-radius: 12px;
+      background: #ff7c18;
+      color: #fff;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+    .btn-selecionar:hover { background: #e6700f; }
+    .btn-selecionar.secundario {
+      background: #eaf2ff;
+      color: #173d63;
+    }
+    .resumo {
+      display: grid;
+      gap: 18px;
+    }
+    .resumo-box {
+      background: #fff;
+      border: 1px solid #dce6f0;
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .resumo-box h3 {
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+    .resumo-box p {
+      color: #51697f;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .selected-details {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+      color: #1d3557;
+      font-size: 15px;
+    }
+    .empty-state {
+      background: #fff;
+      border: 1px dashed #c8d7ea;
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      color: #58728b;
+    }
+    @media (max-width: 900px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+      .hero {
+        padding: 22px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="index.html" class="logo"><span>🍊</span><span>Frete Conecta</span></a>
+      <div class="user-panel" aria-live="polite"></div>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">Área do destinatário</div>
+      <h1>Escolha a entrega da carga</h1>
+      <p class="subtitle">Veja as cargas disponíveis e selecione aquela que vai receber. Depois de confirmar, o sistema guarda a entrega escolhida para acompanhamento.</p>
+
+      <div class="content">
+        <div class="panel">
+          <h2>Entregas disponíveis</h2>
+          <div id="lista-entregas" class="lista-entregas"></div>
+        </div>
+
+        <aside class="resumo">
+          <div class="panel resumo-box">
+            <h3>Entrega selecionada</h3>
+            <div id="resumo-selecionado" class="selected-details">
+              <p>Nenhuma entrega foi escolhida ainda. Selecione uma carga para acompanhar.</p>
+            </div>
+          </div>
+
+          <div class="panel resumo-box">
+            <h3>Como funciona</h3>
+            <p>1. Veja as cargas disponíveis.<br>2. Escolha a entrega da sua preferência.<br>3. Acompanhe o status na tela de confirmação.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    FreteConectaAuth.requireAuth('destinatario', 'login-destinatario.html');
+    FreteConectaAuth.setupUserMenu({
+      containerSelector: '.user-panel',
+      loginLink: 'login-destinatario.html',
+      redirectAfterLogout: 'index.html'
+    });
+
+    const STORAGE_KEY = 'freteConectaEntregaSelecionada';
+
+    function formatDate(rawDate) {
+      if (!rawDate) return 'Data não informada';
+      const date = new Date(rawDate);
+      if (Number.isNaN(date.getTime())) return rawDate;
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function getSelectedId() {
+      const value = localStorage.getItem(STORAGE_KEY);
+      return value ? String(value) : '';
+    }
+
+    function setSelectedId(id) {
+      const normalizedId = id ? String(id) : '';
+      if (!normalizedId) {
+        localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, normalizedId);
+    }
+
+    function getCardMarkup(carga, isSelected) {
+      return `
+        <article class="entrega-card ${isSelected ? 'selected' : ''}">
+          <div class="card-top">
+            <span class="badge">📦 ${carga.tipo || 'Carga'}</span>
+            <span class="status">● Disponível</span>
+          </div>
+
+          <div class="rota">
+            <span>${carga.origem || 'Origem não informada'}</span>
+            <span class="seta">→</span>
+            <span>${carga.destino || 'Destino não informado'}</span>
+          </div>
+
+          <div class="meta">
+            <div><strong>Peso:</strong> ${carga.peso || '—'}</div>
+            <div><strong>Data:</strong> ${formatDate(carga.data)}</div>
+            <div><strong>Origem:</strong> ${carga.regiaoOrigem || '—'}</div>
+            <div><strong>Destino:</strong> ${carga.regiaoPublicacao || '—'}</div>
+          </div>
+
+          <div class="acao">
+            <div class="valor">${carga.valor || 'R$ 0,00'}</div>
+            <button type="button" class="btn-selecionar ${isSelected ? 'secundario' : ''}" data-id="${carga.id}">
+              ${isSelected ? 'Entrega selecionada' : 'Selecionar entrega'}
+            </button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderSelectedSummary(carga) {
+      const container = document.getElementById('resumo-selecionado');
+      if (!carga) {
+        container.innerHTML = '<p>Nenhuma entrega foi escolhida ainda. Selecione uma carga para acompanhar.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div><strong>Carga:</strong> ${carga.tipo || 'Carga'}</div>
+        <div><strong>Origem:</strong> ${carga.origem || '—'}</div>
+        <div><strong>Destino:</strong> ${carga.destino || '—'}</div>
+        <div><strong>Peso:</strong> ${carga.peso || '—'}</div>
+        <div><strong>Valor:</strong> ${carga.valor || 'R$ 0,00'}</div>
+        <div><strong>Data de entrega:</strong> ${formatDate(carga.data)}</div>
+        <div><strong>Observações:</strong> ${carga.observacoes || 'Nenhuma observação adicional.'}</div>
+      `;
+    }
+
+    function renderEntregas() {
+      const cargas = FreteConectaAuth.getCargasDisponiveis();
+      const list = document.getElementById('lista-entregas');
+      const selectedId = getSelectedId();
+
+      if (!cargas.length) {
+        list.innerHTML = '<div class="empty-state">Ainda não há cargas disponíveis para entrega no momento.</div>';
+        renderSelectedSummary(null);
+        return;
+      }
+
+      const selectedCarga = cargas.find((item) => String(item.id) === String(selectedId)) || null;
+      list.innerHTML = cargas.map((carga) => getCardMarkup(carga, selectedCarga && String(carga.id) === String(selectedCarga.id))).join('');
+      renderSelectedSummary(selectedCarga);
+
+      list.querySelectorAll('.btn-selecionar').forEach((button) => {
+        button.addEventListener('click', () => {
+          const cargaId = button.dataset.id;
+          setSelectedId(cargaId);
+          renderEntregas();
+        });
+      });
+    }
+
+    renderEntregas();
+  </script>
+</body>
+</html>

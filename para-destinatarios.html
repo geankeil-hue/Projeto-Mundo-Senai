@@ -134,6 +134,11 @@
 
   <script src="auth.js"></script>
   <script>
+    const usuarioAtual = FreteConectaAuth.currentUser();
+    if (usuarioAtual && usuarioAtual.role === 'destinatario') {
+      window.location.href = 'destinatario-entregas.html';
+    }
+
     FreteConectaAuth.requireAuth('destinatario', 'login-destinatario.html');
     FreteConectaAuth.setupUserMenu({
       containerSelector: '.user-panel',
