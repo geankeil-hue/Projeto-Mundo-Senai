@@ -164,3 +164,33 @@ test('cadastro em outro papel deve permitir o mesmo e-mail quando o perfil for d
     });
   });
 });
+
+test('publicar carga deve persistir e listar corretamente com dados do embarcador', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'emb-1',
+    nome: 'Embarcador Demo',
+    email: 'embarcador@demo.com',
+    role: 'embarcador'
+  }));
+
+  const carga = auth.publishCarga({
+    origem: 'São Paulo / SP',
+    destino: 'Campinas / SP',
+    tipo: 'Grãos',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '12 t',
+    data: '2026-10-30',
+    valor: 'R$ 3.400,00',
+    observacoes: 'Carga com entrega urgente'
+  });
+
+  assert.ok(carga.id);
+  const cargasDoEmbarcador = auth.getCargas().filter((item) => item.userId === 'emb-1');
+  assert.equal(cargasDoEmbarcador.length, 1);
+  assert.equal(cargasDoEmbarcador[0].origem, 'São Paulo / SP');
+  assert.equal(cargasDoEmbarcador[0].destino, 'Campinas / SP');
+});

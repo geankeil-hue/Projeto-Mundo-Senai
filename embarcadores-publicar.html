@@ -531,6 +531,15 @@
       mensagem.className = 'mensagem ' + tipo;
     }
 
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     function formatCurrency(value) {
       return Number(value || 0).toLocaleString('pt-BR', {
         style: 'currency',
@@ -555,23 +564,33 @@
         return;
       }
 
-      cargasLista.innerHTML = minhas.map((carga) => `
-        <article class="carga-card">
-          <div class="carga-top">
-            <h4>${(carga.tipo || 'Carga').toString()}</h4>
-            <span class="valor">${carga.valor || 'R$ 0,00'}</span>
-          </div>
+      cargasLista.innerHTML = minhas.map((carga) => {
+        const origem = escapeHtml(carga.origem || '-');
+        const destino = escapeHtml(carga.destino || '-');
+        const tipo = escapeHtml(carga.tipo || 'Carga');
+        const peso = escapeHtml(carga.peso || '-');
+        const valor = escapeHtml(carga.valor || 'R$ 0,00');
+        const observacoes = escapeHtml(carga.observacoes || 'Sem observações adicionais.');
+        const dataTexto = carga.data ? new Date(carga.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
 
-          <div class="carga-meta">
-            <div><strong>Origem:</strong> ${carga.origem || '-'}</div>
-            <div><strong>Destino:</strong> ${carga.destino || '-'}</div>
-            <div><strong>Peso:</strong> ${carga.peso || '-'}</div>
-            <div><strong>Data:</strong> ${carga.data ? new Date(carga.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</div>
-          </div>
+        return `
+          <article class="carga-card">
+            <div class="carga-top">
+              <h4>${tipo}</h4>
+              <span class="valor">${valor}</span>
+            </div>
 
-          <div class="obs">${carga.observacoes ? carga.observacoes : 'Sem observações adicionais.'}</div>
-        </article>
-      `).join('');
+            <div class="carga-meta">
+              <div><strong>Origem:</strong> ${origem}</div>
+              <div><strong>Destino:</strong> ${destino}</div>
+              <div><strong>Peso:</strong> ${peso}</div>
+              <div><strong>Data:</strong> ${escapeHtml(dataTexto)}</div>
+            </div>
+
+            <div class="obs">${observacoes}</div>
+          </article>
+        `;
+      }).join('');
     }
 
     cargoForm.addEventListener('submit', function (event) {

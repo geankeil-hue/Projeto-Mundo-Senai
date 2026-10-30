@@ -3,54 +3,74 @@
   const SESSION_KEY = 'freteConectaCurrentUser';
 
   function normalize(value) {
-    return String(value ?? '').trim().toLowerCase();
+    return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  function safeText(value, fallback = '') {
+    const text = String(value ?? '');
+    if (!text.trim()) {
+      return fallback;
+    }
+    return text.replace(/[<>]/g, '').trim();
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   function readUsers() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
     } catch (error) {
       return [];
     }
   }
 
   function writeUsers(users) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(users) ? users : []));
   }
 
   function readCargas() {
     try {
       const saved = localStorage.getItem('freteConectaCargas');
       const lista = saved ? JSON.parse(saved) : [];
-      return Array.isArray(lista) ? lista : [];
+      return Array.isArray(lista) ? lista.filter(Boolean) : [];
     } catch (error) {
       return [];
     }
   }
 
   function writeCargas(cargas) {
-    localStorage.setItem('freteConectaCargas', JSON.stringify(cargas));
+    localStorage.setItem('freteConectaCargas', JSON.stringify(Array.isArray(cargas) ? cargas : []));
   }
 
   function parseUser(user) {
-    if (!user) return null;
-    const role = user.role || 'caminhoneiro';
-    const cidade = user.cidade || user.localidade || '';
-    const estado = user.estado || user.uf || '';
-    const homeRegion = user.homeRegion || user.regiao || [cidade, estado].filter(Boolean).join(' / ') || 'São Paulo';
+    if (!user || typeof user !== 'object') return null;
+    const role = ['caminhoneiro', 'embarcador', 'destinatario'].includes(String(user.role || '').toLowerCase())
+      ? String(user.role).toLowerCase()
+      : 'caminhoneiro';
+    const cidade = safeText(user.cidade || user.localidade || '');
+    const estado = safeText(user.estado || user.uf || '');
+    const homeRegion = safeText(user.homeRegion || user.regiao || [cidade, estado].filter(Boolean).join(' / ') || 'São Paulo');
     return {
-      id: user.id || Date.now().toString(),
-      nome: user.nome || '',
-      cpf: user.cpf || '',
-      cnpj: user.cnpj || '',
-      email: user.email || '',
-      senha: user.senha || '',
+      id: safeText(user.id || Date.now().toString(), Date.now().toString()),
+      nome: safeText(user.nome || ''),
+      cpf: safeText(user.cpf || ''),
+      cnpj: safeText(user.cnpj || ''),
+      email: safeText(user.email || ''),
+      senha: String(user.senha ?? '').trim(),
       cidade,
       estado,
       homeRegion,
-      role: ['caminhoneiro', 'embarcador', 'destinatario'].includes(role) ? role : 'caminhoneiro',
-      createdAt: user.createdAt || new Date().toISOString()
+      role,
+      createdAt: safeText(user.createdAt || new Date().toISOString())
     };
   }
 
@@ -62,6 +82,10 @@
 
     const candidates = users.filter((user) => {
       const userParsed = parseUser(user);
+      if (!userParsed) {
+        return false;
+      }
+
       const sameRole = userParsed.role === targetRole;
       const emailMatch = normalize(userParsed.email) === valor;
       const cpfMatch = normalize(userParsed.cpf) === valor;
@@ -268,7 +292,7 @@
       if (!email) {
         return {
           success: false,
-          message: 'Essa conta não possui um e-mail cadastrado para receber a recuperação.'
+          message: 'Essa conta não possui um e-mail cadastrado para receber recuperação.'
         };
       }
 
@@ -286,53 +310,26 @@
         userId: perfil.id,
         createdAt: new Date().toISOString(),
         redirect: originPage,
-        role: role || perfil.role
+        role: role || perfil.role,
+        generatedLocally: true
       }));
 
-      const assunto = 'Recuperação de senha - Frete Conecta';
-      const corpo = [
-        'Olá ' + (perfil.nome || 'usuário') + ',',
-        '',
-        'Recebemos sua solicitação de recuperação de senha.',
-        'Seu código de segurança é: ' + codigo,
-        '',
-        'Use este código para redefinir sua senha no site.',
-        'Se você não solicitou essa recuperação, ignore este e-mail.',
-        '',
-        'Atenciosamente,',
-        'Frete Conecta'
-      ].join('\n');
-
-      const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
       const recoveryPage = 'recuperar-senha.html?email=' + encodeURIComponent(email) + '&redirect=' + encodeURIComponent(originPage);
 
-      try {
-        if (email.toLowerCase().endsWith('@gmail.com')) {
-          window.open(gmailUrl, '_blank', 'noopener');
-          setTimeout(() => {
-            window.location.href = recoveryPage;
-          }, 600);
-        } else {
-          const mailtoUrl = 'mailto:' + email + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
-          window.location.href = mailtoUrl;
-          setTimeout(() => {
-            window.location.href = recoveryPage;
-          }, 700);
-        }
-      } catch (error) {
-        const fallbackUrl = 'mailto:' + email + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
-        window.location.href = fallbackUrl;
-        setTimeout(() => {
+      setTimeout(() => {
+        try {
           window.location.href = recoveryPage;
-        }, 700);
-      }
+        } catch (error) {
+          // ignora erro em ambiente sem navegador completo
+        }
+      }, 150);
 
       return {
         success: true,
         email,
         codigo,
         recoveryPage,
-        message: 'O Gmail de recuperação foi aberto com o código da conta.'
+        message: 'Código de recuperação gerado localmente. Use o código na página de redefinição.'
       };
     },
     verifyRecoveryCode(email, codigo, userId) {
@@ -346,6 +343,13 @@
       })();
 
       if (!stored) {
+        return false;
+      }
+
+      const createdAt = new Date(stored.createdAt || 0).getTime();
+      const isExpired = Number.isFinite(createdAt) && (Date.now() - createdAt) > 15 * 60 * 1000;
+      if (isExpired) {
+        localStorage.removeItem('freteConectaRecoveryCode');
         return false;
       }
 
@@ -435,7 +439,7 @@
 
       return {
         success: true,
-        message: 'Senha redefinida com sucesso.',
+        message: 'Senha redefinida com sucesso. Agora você pode fazer login com a nova senha.',
         role: perfil.role
       };
     },
@@ -552,9 +556,15 @@
         return current;
       }
 
+      container.innerHTML = '';
+
       if (!current) {
         const loginLink = options.loginLink || 'login-embarcadores.html';
-        container.innerHTML = '<a href="' + loginLink + '" class="user-login-link">Entrar</a>';
+        const link = document.createElement('a');
+        link.href = loginLink;
+        link.className = 'user-login-link';
+        link.textContent = 'Entrar';
+        container.appendChild(link);
         return current;
       }
 
@@ -565,22 +575,26 @@
           ? 'destinatario-entregas.html'
           : 'para-caminhoneiros.html';
 
-      container.innerHTML = `
-        <div class="user-badge">
-          <span class="user-badge-icon">👋</span>
-          <span class="user-badge-name">${nome}</span>
-        </div>
-        <a href="${areaPath}" class="user-area-link">Área</a>
-        <button type="button" class="user-logout-btn">Sair</button>
-      `;
+      const badge = document.createElement('div');
+      badge.className = 'user-badge';
+      badge.innerHTML = '<span class="user-badge-icon">👋</span><span class="user-badge-name">' + escapeHtml(nome) + '</span>';
+      container.appendChild(badge);
 
-      const logoutButton = container.querySelector('.user-logout-btn');
-      if (logoutButton) {
-        logoutButton.addEventListener('click', () => {
-          this.logout();
-          window.location.href = options.redirectAfterLogout || 'index.html';
-        });
-      }
+      const areaLink = document.createElement('a');
+      areaLink.href = areaPath;
+      areaLink.className = 'user-area-link';
+      areaLink.textContent = 'Área';
+      container.appendChild(areaLink);
+
+      const logoutButton = document.createElement('button');
+      logoutButton.type = 'button';
+      logoutButton.className = 'user-logout-btn';
+      logoutButton.textContent = 'Sair';
+      logoutButton.addEventListener('click', () => {
+        this.logout();
+        window.location.href = options.redirectAfterLogout || 'index.html';
+      });
+      container.appendChild(logoutButton);
 
       this.hideLoginOptions();
       return current;
@@ -599,7 +613,7 @@
 
       const jaExiste = users.some((user) => {
         const item = parseUser(user);
-        if (item.role !== payload.role) {
+        if (!item || item.role !== payload.role) {
           return false;
         }
 
@@ -680,8 +694,11 @@
       writeCargas(cargas);
       return payload;
     },
+    getCargas() {
+      return readCargas().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    },
     getCargasDisponiveis() {
-      return readCargas()
+      return this.getCargas()
         .filter((carga) => !carga.status || (carga.status !== 'aceita' && carga.status !== 'em_corrida'))
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     },

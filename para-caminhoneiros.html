@@ -1384,8 +1384,16 @@
             const destino = parseLocalizacao(paraDestino);
             const pontoOrigem = coordenadasPorCidade[origem.cidade] || { lat: -23.5505, lng: -46.6333 };
             const pontoDestino = coordenadasPorCidade[destino.cidade] || { lat: -23.5505, lng: -46.6333 };
-            const distancia = Math.hypot(pontoDestino.lat - pontoOrigem.lat, pontoDestino.lng - pontoOrigem.lng) * 111.32;
-            return Math.max(18, Math.round(distancia));
+
+            const toRad = (valor) => (valor * Math.PI) / 180;
+            const raioTerraKm = 6371;
+            const dLat = toRad(pontoDestino.lat - pontoOrigem.lat);
+            const dLng = toRad(pontoDestino.lng - pontoOrigem.lng);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(pontoOrigem.lat)) * Math.cos(toRad(pontoDestino.lat)) * Math.sin(dLng / 2) ** 2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distanciaKm = raioTerraKm * c;
+
+            return Math.max(1, Math.round(distanciaKm));
         }
 
         function formatarTempoEstimado(km) {
@@ -1422,7 +1430,7 @@
             painel.innerHTML = `
                 <div class="gps-header">
                     <span>📍 Rota ativa</span>
-                    <span class="gps-badge">GPS em tempo real</span>
+                    <span class="gps-badge">Estimativa ilustrativa</span>
                 </div>
                 <div class="gps-route">
                     <span>${localAtual}</span>
@@ -1431,11 +1439,11 @@
                 </div>
                 <div class="gps-metrics">
                     <div class="gps-metric">
-                        <span class="gps-label">Distância</span>
+                        <span class="gps-label">Distância estimada</span>
                         <span class="gps-value">${distanciaKm} km</span>
                     </div>
                     <div class="gps-metric">
-                        <span class="gps-label">Tempo</span>
+                        <span class="gps-label">Tempo estimado</span>
                         <span class="gps-value">${tempoEstimado}</span>
                     </div>
                     <div class="gps-metric">
@@ -1444,6 +1452,7 @@
                     </div>
                 </div>
                 <div class="gps-bar"><span style="width: ${progresso}%"></span></div>
+                <small style="display:block; margin-top: 10px; color:#667085;">* Este valor é uma estimativa ilustrativa para planejamento e não representa GPS em tempo real.</small>
             `;
 
             dashboard.prepend(painel);
@@ -1695,7 +1704,7 @@
                         const cargaConfirmada = FreteConectaAuth.confirmCarga(id);
                         const distanciaKm = calcularDistanciaKm(`${FreteConectaAuth.currentUser()?.cidade || 'São Paulo'} / ${FreteConectaAuth.currentUser()?.estado || 'SP'}`, cargaConfirmada.origem || 'São Paulo / SP');
                         const tempoEstimado = formatarTempoEstimado(distanciaKm);
-                        alert(`🏁 Corrida iniciada com sucesso! ${cargaConfirmada.origem} → ${cargaConfirmada.destino}.\n📍 Distância até a carga: ${distanciaKm} km\n⏱️ Tempo estimado: ${tempoEstimado}`);
+                        alert(`🏁 Corrida iniciada com sucesso! ${cargaConfirmada.origem} → ${cargaConfirmada.destino}.\n📍 Distância estimada até a carga: ${distanciaKm} km\n⏱️ Tempo estimado: ${tempoEstimado}\nℹ️ Dados ilustrativos, não GPS em tempo real.`);
                         renderCargasDisponiveis();
                     } catch (erro) {
                         alert('⚠️ ' + erro.message);

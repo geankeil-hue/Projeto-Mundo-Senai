@@ -1288,6 +1288,15 @@
         const cargasLista = document.getElementById('cargasLista');
         const resumoTaxaSite = document.getElementById('resumoTaxaSite');
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         function formatCurrency(value) {
             return Number(value || 0)
                 .toLocaleString('pt-BR', {
@@ -1347,24 +1356,26 @@
                 const valorFrete = parseCurrencyValue(carga.valor);
                 const taxaSite = Number(carga.taxaPlataforma || (valorFrete * 0.05));
                 const valorLiquido = Number(carga.valorLiquido || (valorFrete - taxaSite));
+                const dataTexto = carga.data ? new Date(carga.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada';
+                const observacoes = escapeHtml(carga.observacoes || '');
 
                 return `
                     <article class="carga-card">
                         <div class="carga-top">
-                            <strong>${carga.origem} → ${carga.destino}</strong>
-                            <span class="carga-preco">${carga.valor}</span>
+                            <strong>${escapeHtml(carga.origem || '-') + ' → ' + escapeHtml(carga.destino || '-')}</strong>
+                            <span class="carga-preco">${escapeHtml(carga.valor || 'R$ 0,00')}</span>
                         </div>
-                        <div class="carga-fee">Site ganhou (5%): ${formatCurrency(taxaSite)}</div>
+                        <div class="carga-fee">Site ganhou (5%): ${escapeHtml(formatCurrency(taxaSite))}</div>
                         <div class="carga-meta">
-                            <div><strong>Tipo:</strong> ${carga.tipo}</div>
-                            <div><strong>Origem:</strong> ${carga.origem}</div>
-                            <div><strong>Destino:</strong> ${carga.destino}</div>
-                            <div><strong>Região de origem:</strong> ${carga.regiaoOrigem || 'Não informada'}</div>
-                            <div><strong>Região de publicação:</strong> ${carga.regiaoPublicacao || 'Não informada'}</div>
-                            <div><strong>Peso:</strong> ${carga.peso}</div>
-                            <div><strong>Data:</strong> ${new Date(carga.data).toLocaleDateString('pt-BR')}</div>
-                            <div><strong>Valor líquido do embarcador:</strong> ${formatCurrency(valorLiquido)}</div>
-                            ${carga.observacoes ? `<div><strong>Obs:</strong> ${carga.observacoes}</div>` : ''}
+                            <div><strong>Tipo:</strong> ${escapeHtml(carga.tipo || '-')}</div>
+                            <div><strong>Origem:</strong> ${escapeHtml(carga.origem || '-')}</div>
+                            <div><strong>Destino:</strong> ${escapeHtml(carga.destino || '-')}</div>
+                            <div><strong>Região de origem:</strong> ${escapeHtml(carga.regiaoOrigem || 'Não informada')}</div>
+                            <div><strong>Região de publicação:</strong> ${escapeHtml(carga.regiaoPublicacao || 'Não informada')}</div>
+                            <div><strong>Peso:</strong> ${escapeHtml(carga.peso || '-')}</div>
+                            <div><strong>Data:</strong> ${escapeHtml(dataTexto)}</div>
+                            <div><strong>Valor líquido do embarcador:</strong> ${escapeHtml(formatCurrency(valorLiquido))}</div>
+                            ${observacoes ? `<div><strong>Obs:</strong> ${observacoes}</div>` : ''}
                         </div>
                     </article>
                 `;
