@@ -1,4 +1,4 @@
-const fs = require('fs');
+'const fs = require('fs');
 const path = require('path');
 
 const root = __dirname;
@@ -41,7 +41,14 @@ const ls = {
   removeItem: (key) => { delete store[key]; }
 };
 
-global.window = global;
+global.document = {
+  readyState: 'complete',
+  querySelectorAll() { return []; },
+  querySelector() { return null; },
+  addEventListener() {},
+  createElement() { return { style: {}, setAttribute() {}, appendChild() {}, addEventListener() {}, className: '' }; }
+};
+global.window = { ...global, localStorage: ls, document: global.document, location: { pathname: '/', href: 'http://localhost/' } };
 global.localStorage = ls;
 
 const vm = require('vm');
@@ -52,19 +59,19 @@ const cam = global.FreteConectaAuth.register({
   nome: 'Cam',
   email: 'cam@teste.com',
   cpf: '11122233344',
-  senha: '123456',
+  senha: 'Senha123',
   role: 'caminhoneiro'
 });
-const camLogin = global.FreteConectaAuth.login('cam@teste.com', '123456', 'caminhoneiro');
+const camLogin = global.FreteConectaAuth.login('cam@teste.com', 'Senha123', 'caminhoneiro');
 
 const emb = global.FreteConectaAuth.register({
   nome: 'Emb',
   email: 'emb@teste.com',
   cnpj: '11.222.333/0001-44',
-  senha: '654321',
+  senha: 'Segura456',
   role: 'embarcador'
 });
-const embLogin = global.FreteConectaAuth.login('emb@teste.com', '654321', 'embarcador');
+const embLogin = global.FreteConectaAuth.login('emb@teste.com', 'Segura456', 'embarcador');
 
 const authOk = !!cam && !!camLogin && !!emb && !!embLogin;
 console.log('AUTH_OK', authOk);
