@@ -821,6 +821,91 @@
     });
   }
 
+  function createIntegrityHash(payload) {
+    return sha256Hex(JSON.stringify(payload));
+  }
+
+  function ensureArray(list) {
+    return Array.isArray(list) ? list : [];
+  }
+
+  function getPublicUserProfile(userId) {
+    const user = resolveUserById(userId);
+    if (!user) {
+      return null;
+    }
+    return {
+      id: user.id,
+      nome: user.nome,
+      role: user.role,
+      cidade: user.cidade || user.estado || 'Brasil',
+      perfilPublico: true
+    };
+  }
+
+  function getCompanyPermissions(role) {
+    const permissionsByRole = {
+      administrador: ['empresa:read', 'empresa:write', 'funcionarios:manage', 'financeiro:read', 'financeiro:write', 'frota:manage', 'documentos:manage', 'suporte:manage'],
+      gerente: ['empresa:read', 'empresa:write', 'funcionarios:manage', 'financeiro:read', 'frota:manage', 'documentos:read', 'suporte:manage'],
+      operador: ['empresa:read', 'operacoes:write', 'documentos:read', 'suporte:create'],
+      financeiro: ['empresa:read', 'financeiro:read', 'financeiro:write', 'documentos:read'],
+      consulta: ['empresa:read', 'financeiro:read', 'documentos:read', 'suporte:read']
+    };
+    return permissionsByRole[String(role || '').toLowerCase()] || [];
+  }
+
+  function getCompanyAccessEntry(companyId, userId) {
+    const entries = ensureArray(readJSON('freteConectaEmpresaAssociacoes', []));
+    return entries.find((entry) => String(entry.companyId) === String(companyId) && String(entry.userId) === String(userId)) || null;
+  }
+
+  function writeCompanyAccess(entries) {
+    writeJSON('freteConectaEmpresaAssociacoes', ensureArray(entries));
+  }
+
+  function readCompanyData() {
+    return ensureArray(readJSON('freteConectaEmpresas', []));
+  }
+
+  function getAllRatings() {
+    return ensureArray(readJSON('freteConectaAvaliacoes', []));
+  }
+
+  function getAllProofs() {
+    return ensureArray(readJSON('freteConectaComprovantes', []));
+  }
+
+  function getFinancialHistory() {
+    return ensureArray(readJSON('freteConectaFinanceiro', []));
+  }
+
+  function getCargoParticipants(carga) {
+    if (!carga || typeof carga !== 'object') {
+      return [];
+    }
+    return Array.from(new Set([
+      String(carga.userId || '').trim(),
+      String(carga.caminhoneiroId || '').trim(),
+      String(carga.destinatarioId || '').trim()
+    ].filter(Boolean)));
+  }
+
+  function getChatStore() {
+    return ensureArray(readJSON('freteConectaChat', []));
+  }
+
+  function getOccurrencesStore() {
+    return ensureArray(readJSON('freteConectaOcorrencias', []));
+  }
+
+  function getSchedulingStore() {
+    return ensureArray(readJSON('freteConectaAgenda', []));
+  }
+
+  function createId(prefix) {
+    return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  }
+
   const FreteConectaAuth = {
     getUsers: readUsers,
     getCargas: readCargas,
@@ -1510,6 +1595,594 @@
       };
       writeTrackingState(carga.id, next);
       return { ...next, mode: 'real', isSimulated: false };
+    },
+    addRating(data = {}) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(data.cargaId || ''));
+      if (!carga) {
+        throw new Error('Carga não encontrada para avaliação.');
+      }
+      if (normalizeStatusKey(carga.status || 'publicada') !== 'recebimento_confirmado') {
+        throw new Error('Só é possível avaliar uma operação após o recebimento ser confirmado.');
+      }
+
+      const evaluatorId = String(data.evaluatorId || '');
+      const evaluatedUserId = String(data.evaluatedUserId || '');
+      const participantes = [String(carga.userId || ''), String(carga.caminhoneiroId || ''), String(carga.destinatarioId || '')].filter(Boolean);
+      if (!evaluatorId || !evaluatedUserId) {
+        throw new Error('Dados do avaliador e do avaliado são obrigatórios.');
+      }
+      if (!participantes.includes(evaluatorId) || !participantes.includes(evaluatedUserId)) {
+        throw new Error('Usuário não participou desta entrega e não pode avaliar a operação.');
+      }
+      if (evaluatorId === evaluatedUserId) {
+        throw new Error('Não é permitido avaliar a si mesmo em uma entrega.');
+      }
+
+      const existingRatings = getAllRatings();
+      const duplicate = existingRatings.some((rating) => {
+        return String(rating.cargaId) === String(data.cargaId) && String(rating.evaluatorId) === String(evaluatorId) && String(rating.evaluatedUserId) === String(evaluatedUserId);
+      });
+      if (duplicate) {
+        throw new Error('Avaliação duplicada para a mesma operação.');
+      }
+
+      const nota = Number(data.nota || 0);
+      const pontualidade = Number(data.pontualidade || 0);
+      const comunicacao = Number(data.comunicacao || 0);
+      const cuidado = Number(data.cuidado || 0);
+      const compromisso = Number(data.compromisso || 0);
+      if ([nota, pontualidade, comunicacao, cuidado, compromisso].some((value) => !Number.isFinite(value) || value < 1 || value > 5)) {
+        throw new Error('Todos os critérios de avaliação devem estar entre 1 e 5 estrelas.');
+      }
+
+      const rating = {
+        id: `rating-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        cargaId: String(carga.id),
+        evaluatorId,
+        evaluatedUserId,
+        nota,
+        pontualidade,
+        comunicacao,
+        cuidado,
+        compromisso,
+        comentario: String(data.comentario || '').trim(),
+        createdAt: new Date().toISOString()
+      };
+      existingRatings.push(rating);
+      writeJSON('freteConectaAvaliacoes', existingRatings);
+      return rating;
+    },
+    getReputationProfile(userId) {
+      const ratings = getAllRatings().filter((item) => String(item.evaluatedUserId) === String(userId));
+      const entregasConcluidas = this.getCargas().filter((carga) => {
+        const isUser = [String(carga.userId || ''), String(carga.caminhoneiroId || ''), String(carga.destinatarioId || '')].includes(String(userId));
+        return isUser && normalizeStatusKey(carga.status || 'publicada') === 'recebimento_confirmado';
+      }).length;
+
+      const media = ratings.length ? ratings.reduce((sum, item) => sum + Number(item.nota || 0), 0) / ratings.length : 0;
+      const pontualidade = ratings.length ? ratings.reduce((sum, item) => sum + Number(item.pontualidade || 0), 0) / ratings.length : 0;
+      const comunicacao = ratings.length ? ratings.reduce((sum, item) => sum + Number(item.comunicacao || 0), 0) / ratings.length : 0;
+      const cuidado = ratings.length ? ratings.reduce((sum, item) => sum + Number(item.cuidado || 0), 0) / ratings.length : 0;
+      const compromisso = ratings.length ? ratings.reduce((sum, item) => sum + Number(item.compromisso || 0), 0) / ratings.length : 0;
+
+      return {
+        media: Number(media.toFixed(2)),
+        numeroAvaliacoes: ratings.length,
+        entregasConcluidas,
+        pontualidade: Number(pontualidade.toFixed(2)),
+        comunicacao: Number(comunicacao.toFixed(2)),
+        cuidado: Number(cuidado.toFixed(2)),
+        compromisso: Number(compromisso.toFixed(2)),
+        historico: ratings,
+        perfilPublico: getPublicUserProfile(userId)
+      };
+    },
+    generateProofOfDelivery(cargaId) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para gerar comprovante.');
+      }
+      const embarcador = resolveUserById(carga.userId || '');
+      const motorista = resolveUserById(carga.caminhoneiroId || '');
+      const destinatario = resolveUserById(carga.destinatarioId || '');
+      const payload = {
+        identificadorEntrega: String(carga.id),
+        embarcador: embarcador ? { id: embarcador.id, nome: embarcador.nome, email: embarcador.email, cnpj: embarcador.cnpj || '' } : { id: carga.userId || '', nome: 'Embarcador', email: carga.userEmail || '' },
+        caminhoneiro: motorista ? { id: motorista.id, nome: motorista.nome, email: motorista.email, cpf: motorista.cpf || '' } : { id: carga.caminhoneiroId || '', nome: carga.caminhoneiroNome || 'Motorista', email: '' },
+        destinatario: destinatario ? { id: destinatario.id, nome: destinatario.nome, email: destinatario.email, cpf: destinatario.cpf || '' } : { id: carga.destinatarioId || '', nome: carga.destinatarioNome || 'Destinatário', email: '' },
+        descricaoMercadoria: String(carga.tipo || ''),
+        origem: String(carga.origem || ''),
+        destino: String(carga.destino || ''),
+        dataColeta: String(carga.data || ''),
+        dataEntrega: String(carga.data || ''),
+        horarioColeta: String(carga.createdAt || new Date().toISOString()),
+        horarioEntrega: String(carga.confirmadoEm || new Date().toISOString()),
+        confirmacaoRecebimento: normalizeStatusKey(carga.status || 'publicada') === 'recebimento_confirmado',
+        idComprovante: `CP-${Date.now()}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
+        createdAt: new Date().toISOString()
+      };
+      payload.integrityHash = createIntegrityHash(payload);
+      const proofs = getAllProofs();
+      proofs.push(payload);
+      writeJSON('freteConectaComprovantes', proofs);
+      return payload;
+    },
+    validateProofIntegrity(proof) {
+      if (!proof || typeof proof !== 'object') {
+        return false;
+      }
+      const { integrityHash, ...payload } = proof;
+      return typeof integrityHash === 'string' && integrityHash === createIntegrityHash(payload);
+    },
+    getFinancialReport(filters = {}) {
+      const cargas = this.getCargas().filter((carga) => {
+        if (filters.data && String(carga.data || '').slice(0, 7) !== String(filters.data).slice(0, 7)) {
+          return false;
+        }
+        if (filters.empresa && String(carga.userId || '') !== String(filters.empresa)) {
+          return false;
+        }
+        if (filters.caminhoneiro && String(carga.caminhoneiroId || '') !== String(filters.caminhoneiro)) {
+          return false;
+        }
+        if (filters.status && normalizeStatusKey(carga.status || 'publicada') !== normalizeStatusKey(filters.status)) {
+          return false;
+        }
+        if (filters.origem && !String(carga.origem || '').toLowerCase().includes(String(filters.origem).toLowerCase())) {
+          return false;
+        }
+        if (filters.destino && !String(carga.destino || '').toLowerCase().includes(String(filters.destino).toLowerCase())) {
+          return false;
+        }
+        return true;
+      });
+
+      const valores = cargas.map((carga) => ({
+        contratados: parseCurrency(carga.valor),
+        faturados: normalizeStatusKey(carga.status || 'publicada') === 'recebimento_confirmado' ? parseCurrency(carga.valor) : 0,
+        pagos: 0,
+        pendentes: normalizeStatusKey(carga.status || 'publicada') === 'recebimento_confirmado' ? parseCurrency(carga.valor) : parseCurrency(carga.valor) * 0.25,
+        estimados: parseCurrency(carga.valor),
+        status: carga.status || 'publicada'
+      }));
+
+      const totalContratado = valores.reduce((sum, item) => sum + Number(item.contratados || 0), 0);
+      const totalFaturado = valores.reduce((sum, item) => sum + Number(item.faturados || 0), 0);
+      const totalPago = valores.reduce((sum, item) => sum + Number(item.pagos || 0), 0);
+      const totalPendente = valores.reduce((sum, item) => sum + Number(item.pendentes || 0), 0);
+      const receitaPorPeriodo = Array.from(new Set(cargas.map((carga) => getDateKey(carga.createdAt || carga.data)))).map((key) => ({
+        periodo: key,
+        total: cargas.filter((carga) => getDateKey(carga.createdAt || carga.data) === key).reduce((sum, item) => sum + parseCurrency(item.valor), 0)
+      }));
+
+      return {
+        totalFretesContratados: totalContratado,
+        valoresPagos: totalPago,
+        valoresPendentes: totalPendente,
+        despesasRegistradas: 0,
+        receitaPorPeriodo,
+        custoPorEntrega: cargas.length ? totalContratado / Math.max(cargas.length, 1) : 0,
+        historicoFinanceiro: valores,
+        desempenhoFinanceiroMensal: receitaPorPeriodo,
+        filtrosAplicados: filters,
+        tipo: 'financeiro'
+      };
+    },
+    createCompany(data = {}) {
+      const companies = readCompanyData();
+      const company = {
+        id: String(data.id || `company-${Date.now()}`),
+        nome: String(data.nome || '').trim(),
+        cnpj: String(data.cnpj || '').trim(),
+        email: String(data.email || '').trim(),
+        status: 'ativa',
+        createdAt: new Date().toISOString(),
+        atividade: []
+      };
+      if (!company.nome || !company.cnpj) {
+        throw new Error('Nome e CNPJ da empresa são obrigatórios.');
+      }
+      companies.push(company);
+      writeJSON('freteConectaEmpresas', companies);
+      return company;
+    },
+    createEmployeeInvitation(companyId, email, role) {
+      const companies = readCompanyData();
+      if (!companies.some((company) => String(company.id) === String(companyId))) {
+        throw new Error('Empresa não encontrada para convite.');
+      }
+      const invite = {
+        id: `invite-${Date.now()}`,
+        companyId: String(companyId),
+        email: String(email || '').trim(),
+        role: String(role || 'consulta').toLowerCase(),
+        status: 'pendente',
+        createdAt: new Date().toISOString()
+      };
+      const invites = ensureArray(readJSON('freteConectaConvites', []));
+      invites.push(invite);
+      writeJSON('freteConectaConvites', invites);
+      return invite;
+    },
+    associateUserToCompany(companyId, userId, role = 'consulta') {
+      const company = readCompanyData().find((item) => String(item.id) === String(companyId));
+      if (!company) {
+        throw new Error('Empresa não encontrada para associação.');
+      }
+      const entry = {
+        id: `assoc-${Date.now()}`,
+        companyId: String(companyId),
+        userId: String(userId),
+        role: String(role).toLowerCase(),
+        cargo: String(role).toLowerCase(),
+        ativo: true,
+        permissions: getCompanyPermissions(String(role).toLowerCase()),
+        createdAt: new Date().toISOString()
+      };
+      const entries = ensureArray(readJSON('freteConectaEmpresaAssociacoes', []));
+      entries.push(entry);
+      writeCompanyAccess(entries);
+      return entry;
+    },
+    canAccessCompany(userId, companyId, permission = 'empresa:read') {
+      const access = getCompanyAccessEntry(companyId, userId);
+      if (!access) {
+        return false;
+      }
+      return (access.permissions || []).includes(permission) || access.role === 'administrador';
+    },
+    registerVehicle(vehicleData = {}) {
+      const vehicle = {
+        id: String(vehicleData.id || `veiculo-${Date.now()}`),
+        modelo: String(vehicleData.modelo || '').trim(),
+        marca: String(vehicleData.marca || '').trim(),
+        ano: Number(vehicleData.ano || new Date().getFullYear()),
+        placa: String(vehicleData.placa || '').trim(),
+        categoria: String(vehicleData.categoria || 'caminhão').trim(),
+        capacidadeCarga: String(vehicleData.capacidadeCarga || '').trim(),
+        tipoCarroceria: String(vehicleData.tipoCarroceria || '').trim(),
+        quilometragem: Number(vehicleData.quilometragem || 0),
+        situacao: String(vehicleData.situacao || 'disponivel').trim(),
+        motoristaId: String(vehicleData.motoristaId || '').trim(),
+        createdAt: new Date().toISOString(),
+        manutencoes: ensureArray(vehicleData.manutencoes),
+        vencimentos: ensureArray(vehicleData.vencimentos)
+      };
+      if (!vehicle.modelo || !vehicle.placa) {
+        throw new Error('Modelo e placa do veículo são obrigatórios.');
+      }
+      const vehicles = ensureArray(readJSON('freteConectaFrota', []));
+      vehicles.push(vehicle);
+      writeJSON('freteConectaFrota', vehicles);
+      return vehicle;
+    },
+    registerDocument(documentData = {}) {
+      const document = {
+        id: String(documentData.id || `doc-${Date.now()}`),
+        tipo: String(documentData.tipo || 'documento').trim(),
+        nome: String(documentData.nome || '').trim(),
+        categoria: String(documentData.categoria || 'operacional').trim(),
+        ownerId: String(documentData.ownerId || ''),
+        companyId: String(documentData.companyId || ''),
+        fileName: String(documentData.fileName || '').trim(),
+        mimeType: String(documentData.mimeType || 'application/octet-stream').trim(),
+        sizeBytes: Number(documentData.sizeBytes || 0),
+        privado: Boolean(documentData.privado),
+        createdAt: new Date().toISOString()
+      };
+      if (!document.nome || !document.fileName) {
+        throw new Error('Nome e arquivo do documento são obrigatórios.');
+      }
+      if (document.sizeBytes > 10 * 1024 * 1024) {
+        throw new Error('Arquivo excede o limite de 10 MB.');
+      }
+      const documents = ensureArray(readJSON('freteConectaDocumentos', []));
+      documents.push(document);
+      writeJSON('freteConectaDocumentos', documents);
+      return document;
+    },
+    createSupportTicket(ticketData = {}) {
+      const ticket = {
+        id: String(ticketData.id || `ticket-${Date.now()}`),
+        categoria: String(ticketData.categoria || 'outros').trim(),
+        assunto: String(ticketData.assunto || '').trim(),
+        descricao: String(ticketData.descricao || '').trim(),
+        userId: String(ticketData.userId || '').trim(),
+        anexos: ensureArray(ticketData.anexos),
+        status: 'aberto',
+        respostas: ensureArray(ticketData.respostas),
+        createdAt: new Date().toISOString()
+      };
+      if (!ticket.assunto || !ticket.descricao) {
+        throw new Error('Assunto e descrição do chamado são obrigatórios.');
+      }
+      const tickets = ensureArray(readJSON('freteConectaSuporte', []));
+      tickets.push(ticket);
+      writeJSON('freteConectaSuporte', tickets);
+      return ticket;
+    },
+    getOperationalOverview() {
+      const cargas = this.getCargas();
+      const users = getAppUsers();
+      const ratings = getAllRatings();
+      const proofs = getAllProofs();
+      const tickets = ensureArray(readJSON('freteConectaSuporte', []));
+      return {
+        reputacaoMedia: ratings.length ? ratings.reduce((sum, item) => sum + Number(item.nota || 0), 0) / ratings.length : 0,
+        comprovantes: proofs.length,
+        ticketsAbertos: tickets.filter((ticket) => ticket.status === 'aberto').length,
+        totalCargas: cargas.length,
+        usuarios: users.length,
+        empresa: readCompanyData().length,
+        frota: ensureArray(readJSON('freteConectaFrota', [])).length
+      };
+    },
+    canAccessChat(cargaId, userId) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga || !userId) {
+        return false;
+      }
+      return getCargoParticipants(carga).includes(String(userId));
+    },
+    sendChatMessage(payload = {}) {
+      const cargaId = String(payload.cargaId || '');
+      const senderId = String(payload.senderId || '');
+      const senderRole = normalizeRole(payload.senderRole || 'caminhoneiro');
+      const text = String(payload.text || '').trim();
+      if (!cargaId || !senderId || !text) {
+        throw new Error('Carga, remetente e mensagem são obrigatórios.');
+      }
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para o chat.');
+      }
+      if (!this.canAccessChat(cargaId, senderId)) {
+        throw new Error('Este usuário não participa desta entrega e não pode enviar mensagens.');
+      }
+
+      const sender = resolveUserById(senderId);
+      const chats = getChatStore();
+      let chat = chats.find((entry) => String(entry.cargaId) === String(cargaId));
+      if (!chat) {
+        chat = { id: createId('chat'), cargaId, messages: [] };
+        chats.push(chat);
+      }
+
+      const message = {
+        id: createId('msg'),
+        cargaId,
+        senderId,
+        senderRole,
+        senderName: sender ? sender.nome : 'Usuário',
+        text,
+        createdAt: new Date().toISOString(),
+        readBy: [senderId]
+      };
+      chat.messages.push(message);
+      writeJSON('freteConectaChat', chats);
+      return message;
+    },
+    getChatMessages(cargaId, userId) {
+      const chats = getChatStore();
+      const chat = chats.find((entry) => String(entry.cargaId) === String(cargaId));
+      if (!chat) {
+        return [];
+      }
+      const messages = Array.isArray(chat.messages) ? chat.messages : [];
+      if (userId) {
+        messages.forEach((message) => {
+          if (String(message.senderId) !== String(userId) && !message.readBy.includes(String(userId))) {
+            message.readBy = Array.isArray(message.readBy) ? [...new Set([...message.readBy, String(userId)])] : [String(userId)];
+          }
+        });
+        writeJSON('freteConectaChat', chats);
+      }
+      return messages;
+    },
+    getUnreadChatMessages(cargaId, userId) {
+      if (!userId) {
+        return 0;
+      }
+      return this.getChatMessages(cargaId, userId).filter((message) => {
+        return String(message.senderId) !== String(userId) && !(Array.isArray(message.readBy) && message.readBy.includes(String(userId)));
+      }).length;
+    },
+    markChatAsRead(cargaId, userId) {
+      const chats = getChatStore();
+      const chat = chats.find((entry) => String(entry.cargaId) === String(cargaId));
+      if (!chat || !userId) {
+        return 0;
+      }
+      const messages = Array.isArray(chat.messages) ? chat.messages : [];
+      messages.forEach((message) => {
+        if (String(message.senderId) !== String(userId)) {
+          message.readBy = Array.isArray(message.readBy) ? [...new Set([...message.readBy, String(userId)])] : [String(userId)];
+        }
+      });
+      writeJSON('freteConectaChat', chats);
+      return messages.length;
+    },
+    registerOccurrence(payload = {}) {
+      const cargaId = String(payload.cargaId || '').trim();
+      const categoria = String(payload.categoria || '').trim();
+      const descricao = String(payload.descricao || '').trim();
+      const responsavelId = String(payload.responsavelId || '').trim();
+      const evidencia = Array.isArray(payload.evidencias) ? payload.evidencias : [];
+      if (!cargaId || !categoria || !descricao || !responsavelId) {
+        throw new Error('Entrega, categoria, descrição e responsável são obrigatórios.');
+      }
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para o registro de ocorrência.');
+      }
+      if (!this.canAccessChat(cargaId, responsavelId) && !getCargoParticipants(carga).includes(responsavelId)) {
+        throw new Error('Responsável não participa desta entrega.');
+      }
+
+      const ocorrência = {
+        id: createId('occ'),
+        cargaId,
+        categoria,
+        descricao,
+        responsavelId,
+        responsavelRole: normalizeRole(payload.responsavelRole || 'caminhoneiro'),
+        data: new Date().toISOString(),
+        situacao: 'aberta',
+        evidencias: evidencia,
+        resolvidoEm: null,
+        resolucao: ''
+      };
+      const ocorrencias = getOccurrencesStore();
+      ocorrencias.push(ocorrência);
+      writeJSON('freteConectaOcorrencias', ocorrencias);
+
+      getCargoParticipants(carga).forEach((participantId) => {
+        if (participantId !== responsavelId) {
+          addNotification(participantId, {
+            tipo: 'ocorrencia',
+            mensagem: `Ocorrência registrada (${categoria}) na entrega ${cargaId}.`,
+            cargaId
+          });
+        }
+      });
+      return ocorrência;
+    },
+    listOccurrences(cargaId) {
+      const ocorrencias = getOccurrencesStore();
+      const target = String(cargaId || '');
+      return target ? ocorrencias.filter((entry) => String(entry.cargaId) === target) : ocorrencias;
+    },
+    resolveOccurrence(occurrenceId, resolverId, status = 'resolvida', observacao = '') {
+      const ocorrencias = getOccurrencesStore();
+      const occurrence = ocorrencias.find((entry) => String(entry.id) === String(occurrenceId));
+      if (!occurrence) {
+        throw new Error('Ocorrência não encontrada.');
+      }
+      occurrence.situacao = String(status || 'resolvida').trim() || 'resolvida';
+      occurrence.resolvidoEm = new Date().toISOString();
+      occurrence.resolucao = String(observacao || '').trim();
+      occurrence.resolvedBy = String(resolverId || '');
+      writeJSON('freteConectaOcorrencias', ocorrencias);
+      return occurrence;
+    },
+    scheduleCollection(payload = {}) {
+      const cargaId = String(payload.cargaId || '');
+      const usuarioId = String(payload.usuarioId || '');
+      const motoristaId = String(payload.motoristaId || '');
+      const veiculoId = String(payload.veiculoId || '');
+      const data = String(payload.data || '').trim();
+      const horario = String(payload.horario || '').trim();
+      if (!cargaId || !usuarioId || !motoristaId || !veiculoId || !data || !horario) {
+        throw new Error('Carga, usuário, motorista, veículo, data e horário são obrigatórios.');
+      }
+
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para agendamento.');
+      }
+      if (!getCargoParticipants(carga).includes(usuarioId)) {
+        throw new Error('Usuário não autorizado para agendar esta operação.');
+      }
+
+      const agenda = getSchedulingStore();
+      const conflito = agenda.some((entry) => {
+        return entry && String(entry.motoristaId) === String(motoristaId) && String(entry.data) === String(data) && String(entry.horario) === String(horario);
+      }) || agenda.some((entry) => {
+        return entry && String(entry.veiculoId) === String(veiculoId) && String(entry.data) === String(data) && String(entry.horario) === String(horario);
+      });
+      if (conflito) {
+        throw new Error('Conflito de agendamento: motorista ou veículo já está reservado para esse horário.');
+      }
+
+      const agendamento = {
+        id: createId('agenda'),
+        cargaId,
+        usuarioId,
+        motoristaId,
+        veiculoId,
+        data,
+        horario,
+        status: 'agendado',
+        createdAt: new Date().toISOString()
+      };
+      agenda.push(agendamento);
+      writeJSON('freteConectaAgenda', agenda);
+      return agendamento;
+    },
+    listScheduledCollections(userId) {
+      const agenda = getSchedulingStore();
+      if (!userId) {
+        return agenda;
+      }
+      return agenda.filter((entry) => String(entry.usuarioId) === String(userId) || String(entry.motoristaId) === String(userId));
+    },
+    getLogisticsIntelligence(filters = {}) {
+      const cargas = this.getCargas().filter((carga) => {
+        const periodo = String(filters.periodo || '').trim();
+        if (periodo && (carga.createdAt || '').slice(0, 7) !== periodo) {
+          return false;
+        }
+        if (filters.status && normalizeStatusKey(carga.status || 'publicada') !== normalizeStatusKey(filters.status)) {
+          return false;
+        }
+        return true;
+      });
+
+      const entregasConfirmadas = cargas.filter((carga) => ['recebimento_confirmado', 'entrega_finalizada'].includes(normalizeStatusKey(carga.status || 'publicada')));
+      const totalEntregas = entregasConfirmadas.length;
+      const totalCancelar = cargas.filter((carga) => normalizeStatusKey(carga.status || 'publicada') === 'cancelada').length;
+      const totalValor = entregasConfirmadas.reduce((sum, carga) => sum + parseCurrency(carga.valor), 0);
+      const rotas = buildRotasMaisUtilizadas(cargas);
+
+      const tempos = entregasConfirmadas.map((carga) => {
+        const created = new Date(carga.createdAt || carga.data || Date.now()).getTime();
+        const finished = new Date(carga.entregueEm || carga.confirmadoEm || Date.now()).getTime();
+        if (!Number.isFinite(created) || !Number.isFinite(finished)) {
+          return 0;
+        }
+        return Math.max((finished - created) / (1000 * 60 * 60), 0);
+      }).filter((value) => value > 0);
+
+      const tempoMedioTransporte = tempos.length ? tempos.reduce((sum, value) => sum + value, 0) / tempos.length : 0;
+      const entregasNoPrazo = entregasConfirmadas.filter((carga) => {
+        const created = new Date(carga.createdAt || carga.data || Date.now()).getTime();
+        const finished = new Date(carga.entregueEm || carga.confirmadoEm || Date.now()).getTime();
+        if (!Number.isFinite(created) || !Number.isFinite(finished)) {
+          return true;
+        }
+        const delta = (finished - created) / (1000 * 60 * 60 * 24);
+        const expected = 3;
+        return delta <= expected;
+      }).length;
+
+      const performance = Array.from(new Map(cargas.filter((carga) => carga.caminhoneiroId).map((carga) => [String(carga.caminhoneiroId), { id: String(carga.caminhoneiroId), nome: carga.caminhoneiroNome || 'Motorista', entregas: 0, total: 0 }])).entries()).map(([id, entry]) => {
+        const deliveries = cargas.filter((carga) => String(carga.caminhoneiroId) === id);
+        const entregas = deliveries.length;
+        const total = deliveries.reduce((sum, carga) => sum + parseCurrency(carga.valor), 0);
+        return { id, nome: entry.nome, entregas, total };
+      });
+
+      const periodos = Array.from(new Set(cargas.map((carga) => (carga.createdAt || carga.data || '').slice(0, 7)).filter(Boolean))).sort();
+      const evolucaoCustos = periodos.map((periodo) => {
+        const values = cargas.filter((carga) => (carga.createdAt || carga.data || '').slice(0, 7) === periodo);
+        return { periodo, custoTotal: values.reduce((sum, item) => sum + parseCurrency(item.valor), 0), entregas: values.length };
+      });
+
+      return {
+        totalEntregas,
+        quantidadeEntregasPorPeriodo: periodos.length,
+        rotasMaisUtilizadas: rotas,
+        tempoMedioTransporte: Number(tempoMedioTransporte.toFixed(2)),
+        percentualNoPrazo: totalEntregas ? Number(((entregasNoPrazo / totalEntregas) * 100).toFixed(2)) : 0,
+        taxaCancelamento: cargas.length ? Number(((totalCancelar / cargas.length) * 100).toFixed(2)) : 0,
+        desempenhoCaminhoneiros: performance,
+        custoMedioPorEntrega: totalEntregas ? Number((totalValor / totalEntregas).toFixed(2)) : 0,
+        evolucaoCustosLogisticos: evolucaoCustos,
+        economiaEstimada: Number((totalValor * 0.03).toFixed(2)),
+        filtros: filters,
+        dadosReais: true,
+        estimativas: false
+      };
     },
     createDemoScenario() {
       const demoUsers = ensureDemoScenario();
