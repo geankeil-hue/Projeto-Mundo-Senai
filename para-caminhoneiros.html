@@ -1615,6 +1615,7 @@
                     const statusLabel = carga.status === 'em_corrida' ? 'Corrida iniciada' : 'Carga aceita';
                     const botaoLabel = carga.status === 'em_corrida' ? 'Corrida confirmada' : 'Confirmar corrida';
                     const disabled = carga.status === 'em_corrida' ? 'disabled' : '';
+                    const podeCancelar = ['em_corrida', 'retirada', 'retirada_confirmada', 'coletada', 'em_transporte', 'destino_alcancado'].includes(String(carga.status || ''));
 
                     card.innerHTML = `
                         <div class="offer-left">
@@ -1633,6 +1634,7 @@
                             <div class="price">${formatCurrency(Number(String(carga.valor).replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0)}</div>
                             <div class="verified">✓ ${statusLabel}</div>
                             <button type="button" class="confirmar-carga-btn" data-carga-id="${carga.id}" ${disabled}>${botaoLabel}</button>
+                            ${podeCancelar ? `<button type="button" class="cancelar-corrida-btn" data-carga-id="${carga.id}" style="margin-top:8px; background:#fff5f5; border:1px solid #f87171; color:#b42318;">Cancelar corrida</button>` : ''}
                         </div>
                     `;
                     dashboard.appendChild(card);
@@ -1705,6 +1707,19 @@
                         const distanciaKm = calcularDistanciaKm(`${FreteConectaAuth.currentUser()?.cidade || 'São Paulo'} / ${FreteConectaAuth.currentUser()?.estado || 'SP'}`, cargaConfirmada.origem || 'São Paulo / SP');
                         const tempoEstimado = formatarTempoEstimado(distanciaKm);
                         alert(`🏁 Corrida iniciada com sucesso! ${cargaConfirmada.origem} → ${cargaConfirmada.destino}.\n📍 Distância estimada até a carga: ${distanciaKm} km\n⏱️ Tempo estimado: ${tempoEstimado}\nℹ️ Dados ilustrativos, não GPS em tempo real.`);
+                        renderCargasDisponiveis();
+                    } catch (erro) {
+                        alert('⚠️ ' + erro.message);
+                    }
+                });
+            });
+
+            dashboard.querySelectorAll('.cancelar-corrida-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const id = button.dataset.cargaId;
+                    try {
+                        const cargaCancelada = FreteConectaAuth.cancelCarga(id, 'Cancelada pelo motorista', FreteConectaAuth.currentUser()?.id);
+                        alert(`⚠️ Corrida cancelada com sucesso! ${cargaCancelada.origem} → ${cargaCancelada.destino}.\nMotivo: ${cargaCancelada.motivoCancelamento}`);
                         renderCargasDisponiveis();
                     } catch (erro) {
                         alert('⚠️ ' + erro.message);

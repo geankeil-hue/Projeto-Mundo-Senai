@@ -164,3 +164,64 @@ test('cancelamento exige permissão do embarcador ou do motorista responsável',
   assert.equal(cancelled.status, 'cancelada');
   assert.equal(cancelled.motivoCancelamento, 'Falha operacional');
 });
+
+test('motorista pode cancelar corrida em andamento, mas não depois da entrega finalizada', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  auth.register({
+    nome: 'Empresa Norte',
+    email: 'norte@empresa.com',
+    senha: 'Senha123',
+    cnpj: '12.345.678/0001-90',
+    role: 'embarcador'
+  });
+
+  const motorista = auth.register({
+    nome: 'Motorista Cancelador',
+    email: 'cancelador@teste.com',
+    senha: 'Senha123',
+    cpf: '98765432100',
+    role: 'caminhoneiro'
+  });
+
+  auth.login('norte@empresa.com', 'Senha123', 'embarcador');
+  const carga = auth.publishCarga({
+    origem: 'São Paulo / SP',
+    destino: 'Curitiba / PR',
+    tipo: 'Produtos',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '5 t',
+    data: '2026-12-12',
+    valor: 'R$ 4.500,00',
+    observacoes: 'Carga sensível'
+  });
+
+  auth.login('cancelador@teste.com', 'Senha123', 'caminhoneiro');
+  auth.acceptCarga(carga.id);
+  auth.confirmCarga(carga.id);
+
+  const canceladaEmAndamento = auth.cancelCarga(carga.id, 'Problema de logística');
+  assert.equal(canceladaEmAndamento.status, 'cancelada');
+  assert.equal(canceladaEmAndamento.canceladaPor, motorista.id);
+
+  auth.login('norte@empresa.com', 'Senha123', 'embarcador');
+  const novaCarga = auth.publishCarga({
+    origem: 'Campinas / SP',
+    destino: 'Santos / SP',
+    tipo: 'Bebidas',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '3 t',
+    data: '2026-12-15',
+    valor: 'R$ 2.700,00',
+    observacoes: 'Nova etapa de teste'
+  });
+
+  auth.login('cancelador@teste.com', 'Senha123', 'caminhoneiro');
+  auth.acceptCarga(novaCarga.id);
+  auth.atualizarStatusEntrega(novaCarga.id, 'entrega_finalizada');
+
+  assert.throws(() => auth.cancelCarga(novaCarga.id, 'Tentativa indevida'), /finalizada|entreg/i);
+});

@@ -2399,8 +2399,8 @@
       addNotification(carga.userId, { tipo: 'carga_aceita', cargaId: carga.id, mensagem: `${usuario.nome || 'Caminhoneiro'} aceitou a carga.` });
       return atualizada;
     },
-    cancelCarga(cargaId, motivo = 'Cancelada pelo usuário') {
-      const usuario = this.currentUser();
+    cancelCarga(cargaId, motivo = 'Cancelada pelo usuário', userIdOverride) {
+      const usuario = userIdOverride ? resolveUserById(userIdOverride) || this.currentUser() : this.currentUser();
       if (!usuario) {
         throw new Error('Faça login para cancelar uma carga.');
       }
@@ -2412,27 +2412,44 @@
       }
 
       const carga = cargas[index];
+      const statusAtual = normalizeStatusKey(carga.status || 'publicada');
       const canCancel = usuario.role === 'embarcador' && String(carga.userId) === String(usuario.id);
       const isDriver = usuario.role === 'caminhoneiro' && String(carga.caminhoneiroId) === String(usuario.id);
       if (!canCancel && !isDriver) {
         throw new Error('Você não tem permissão para cancelar esta carga.');
       }
 
+      if (statusAtual === 'cancelada') {
+        throw new Error('Esta carga já foi cancelada.');
+      }
+
+      if (statusAtual === 'entrega_finalizada' || statusAtual === 'recebimento_confirmado') {
+        throw new Error('Não é possível cancelar uma entrega já finalizada.');
+      }
+
+      if (isDriver) {
+        const driverAllowedStatuses = ['aceita', 'retirada', 'retirada_confirmada', 'coletada', 'em_corrida', 'em_transporte', 'destino_alcancado'];
+        if (!driverAllowedStatuses.includes(statusAtual)) {
+          throw new Error('O motorista só pode cancelar a corrida enquanto ela está em andamento ou não finalizada.');
+        }
+      }
+
+      const motivoFinal = String(typeof motivo === 'string' ? motivo : 'Cancelada pelo usuário').trim() || 'Cancelada pelo usuário';
       const atualizada = {
         ...carga,
         status: 'cancelada',
         canceladaPor: usuario.id,
-        motivoCancelamento: String(motivo || '').trim() || 'Cancelada pelo usuário',
+        motivoCancelamento: motivoFinal,
         canceladaEm: new Date().toISOString(),
-        historico: Array.isArray(carga.historico) ? [...carga.historico, { evento: 'cancelada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email, motivo: String(motivo || '').trim() || 'Cancelada pelo usuário' }] : [{ evento: 'cancelada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email, motivo: String(motivo || '').trim() || 'Cancelada pelo usuário' }]
+        historico: Array.isArray(carga.historico) ? [...carga.historico, { evento: 'cancelada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email, motivo: motivoFinal }] : [{ evento: 'cancelada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email, motivo: motivoFinal }]
       };
 
       cargas[index] = atualizada;
       writeCargas(cargas);
       return atualizada;
     },
-    confirmCarga(cargaId) {
-      const usuario = this.currentUser();
+    confirmCarga(cargaId, userIdOverride) {
+      const usuario = userIdOverride ? resolveUserById(userIdOverride) || this.currentUser() : this.currentUser();
       if (!usuario) {
         throw new Error('Faça login para confirmar uma carga.');
       }
