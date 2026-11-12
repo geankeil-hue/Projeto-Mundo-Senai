@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rastreamento de carga | Frete Conecta</title>
+  <style>
+    :root {
+      --azul-escuro: #071d31;
+      --azul: #0d2d46;
+      --azul-claro: #dfeefb;
+      --laranja: #ff7a00;
+      --laranja-escuro: #de6800;
+      --texto: #10314a;
+      --fundo: #f4f8fc;
+      --verde: #1b8f5a;
+      --vermelho: #b42318;
+      --cinza: #5d7286;
+      --linha: rgba(16, 49, 74, 0.12);
+      --branco: #ffffff;
+      --sombra: 0 22px 60px rgba(8, 25, 38, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #071d31 0%, #0d2d46 100%);
+      color: var(--branco);
+    }
+    a { text-decoration: none; color: inherit; }
+    button, input, select { font: inherit; }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 30px;
+      font-weight: 800;
+    }
+    .logo-icon { font-size: 36px; }
+    .user-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .user-badge,
+    .user-area-link,
+    .user-login-link,
+    .user-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .user-area-link {
+      background: rgba(255,122,0,0.12);
+      border-color: rgba(255,122,0,0.4);
+      color: #ffd4a7;
+    }
+
+    .hero {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: var(--sombra);
+    }
+    .hero-head {
+      padding: 28px 28px 18px;
+      background: linear-gradient(135deg, rgba(255,122,0,0.18), rgba(255,255,255,0.02));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffd2a1;
+      margin-bottom: 10px;
+    }
+    .hero-head h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 3vw, 3rem);
+      line-height: 1.1;
+    }
+    .hero-head p {
+      margin: 0;
+      color: #dceaf8;
+      line-height: 1.7;
+      max-width: 760px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.45fr 0.8fr;
+      gap: 24px;
+      padding: 24px;
+    }
+    .panel {
+      background: rgba(244,248,252,0.97);
+      border: 1px solid var(--linha);
+      border-radius: 22px;
+      color: var(--texto);
+      padding: 22px;
+    }
+    .map-box {
+      position: relative;
+      min-height: 440px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(16,49,74,0.1);
+      background: linear-gradient(135deg, #eaf4ff 0%, #dfeaf7 100%);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+    }
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(16,49,74,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,49,74,0.08) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.15), rgba(166,196,224,0.15));
+      background-size: 32px 32px, 32px 32px, cover;
+      opacity: 0.85;
+    }
+    .map-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .map-tag {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 2;
+      background: rgba(7,29,49,0.8);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .map-tag.simulado {
+      background: rgba(255,122,0,0.18);
+      border-color: rgba(255,122,0,0.45);
+      color: #7a3900;
+    }
+    .map-tag.real {
+      background: rgba(27,143,90,0.14);
+      border-color: rgba(27,143,90,0.35);
+      color: #0d5a36;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #dce9f5;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 6px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--cinza);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .stat-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--texto);
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 12px 16px;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.02); }
+    .btn-primary { background: var(--laranja); color: #fff; }
+    .btn-secondary { background: #eaf3ff; color: var(--texto); }
+    .btn-success { background: rgba(27,143,90,0.12); color: var(--verde); }
+
+    .route-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .route-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid rgba(16,49,74,0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+    }
+    .route-item strong { color: var(--texto); }
+    .route-arrow { color: var(--laranja); font-weight: 900; }
+
+    .summary-card {
+      background: #fff;
+      border: 1px solid rgba(16,49,74,0.08);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 18px;
+    }
+    .summary-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.3rem;
+    }
+    .summary-card p {
+      margin: 0;
+      color: #50667b;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .content { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="index.html" class="logo"><span class="logo-icon">🍊</span><span>Frete Conecta</span></a>
+      <div class="user-panel" aria-live="polite"></div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-head">
+        <span class="eyebrow">Tracking de carga</span>
+        <h1>Rastreamento da entrega</h1>
+        <p>Visualize origem, destino, rota, motorista e o andamento do transporte em tempo real. O painel aceita simulação e GPS autorizado do veículo.</p>
+      </div>
+
+      <div class="content">
+        <div class="panel">
+          <div class="map-box" id="mapBox">
+            <div class="map-tag" id="mapTag">Simulado</div>
+            <div class="map-grid"></div>
+            <svg class="map-svg" id="mapSvg" viewBox="0 0 800 440" preserveAspectRatio="none"></svg>
+          </div>
+
+          <div class="controls">
+            <button class="btn btn-primary" id="btnStartSim">Iniciar simulação</button>
+            <button class="btn btn-secondary" id="btnPauseSim">Pausar</button>
+            <button class="btn btn-secondary" id="btnAdvanceSim">Avançar</button>
+            <button class="btn btn-success" id="btnRealGps">Permitir GPS real</button>
+          </div>
+
+          <div class="stats">
+            <div class="stat-card">
+              <span class="stat-label">Status</span>
+              <span class="stat-value" id="statusValue">-</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Previsão</span>
+              <span class="stat-value" id="etaValue">-</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Motorista</span>
+              <span class="stat-value" id="driverValue">-</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Posição</span>
+              <span class="stat-value" id="positionValue">-</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <div class="summary-card">
+            <h3>Detalhes da carga</h3>
+            <p id="cargoSummary">Carregando dados...</p>
+          </div>
+
+          <div class="route-list" id="routeList"></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const currentUser = FreteConectaAuth.currentUser();
+    FreteConectaAuth.setupUserMenu({
+      containerSelector: '.user-panel',
+      loginLink: 'login.html',
+      redirectAfterLogout: 'index.html'
+    });
+
+    const cargaId = new URLSearchParams(window.location.search).get('carga') || FreteConectaAuth.getCargas()[0]?.id || '';
+
+    function renderRouteList(snapshot) {
+      const container = document.getElementById('routeList');
+      container.innerHTML = '';
+      snapshot.rota.forEach((point, index) => {
+        const item = document.createElement('div');
+        item.className = 'route-item';
+        const label = index === 0 ? 'Origem' : index === snapshot.rota.length - 1 ? 'Destino' : `Ponto ${index}`;
+        item.innerHTML = '<strong>' + label + '</strong><span>' + point.label + '</span><span class="route-arrow">→</span><span>' + point.latitude.toFixed(2) + ', ' + point.longitude.toFixed(2) + '</span>';
+        container.appendChild(item);
+      });
+    }
+
+    function renderMap(snapshot) {
+      const svg = document.getElementById('mapSvg');
+      const tag = document.getElementById('mapTag');
+      tag.textContent = snapshot.isSimulated ? 'Simulado' : 'GPS real';
+      tag.className = 'map-tag ' + (snapshot.isSimulated ? 'simulado' : 'real');
+
+      const route = snapshot.rota || [];
+      const width = 800;
+      const height = 440;
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      bg.setAttribute('d', route.map((point, index) => {
+        const x = 70 + ((index / (route.length - 1 || 1)) * (width - 140));
+        const y = 70 + ((Number(point.latitude) + 35) / 10) * (height - 140);
+        return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+      }).join(' '));
+      bg.setAttribute('fill', 'none');
+      bg.setAttribute('stroke', '#ff7a00');
+      bg.setAttribute('stroke-width', '6');
+      bg.setAttribute('stroke-linecap', 'round');
+      bg.setAttribute('stroke-linejoin', 'round');
+      bg.setAttribute('opacity', '0.8');
+      svg.innerHTML = '';
+      svg.appendChild(bg);
+
+      route.forEach((point, index) => {
+        const cx = 70 + ((index / (route.length - 1 || 1)) * (width - 140));
+        const cy = 70 + ((Number(point.latitude) + 35) / 10) * (height - 140);
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', String(cx));
+        circle.setAttribute('cy', String(cy));
+        circle.setAttribute('r', index === 0 || index === route.length - 1 ? 8 : 4);
+        circle.setAttribute('fill', index === 0 ? '#1b8f5a' : index === route.length - 1 ? '#b42318' : '#0d2d46');
+        circle.setAttribute('opacity', '0.9');
+        svg.appendChild(circle);
+      });
+
+      const current = snapshot.position || route[0];
+      const currentX = 70 + ((route.findIndex((point) => point.latitude === current.latitude && point.longitude === current.longitude) / (route.length - 1 || 1)) * (width - 140));
+      const currentY = 70 + ((Number(current.latitude) + 35) / 10) * (height - 140);
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      marker.setAttribute('cx', String(currentX));
+      marker.setAttribute('cy', String(currentY));
+      marker.setAttribute('r', '16');
+      marker.setAttribute('fill', snapshot.isSimulated ? '#ff7a00' : '#1b8f5a');
+      marker.setAttribute('stroke', '#fff');
+      marker.setAttribute('stroke-width', '4');
+      svg.appendChild(marker);
+    }
+
+    function renderTracking() {
+      if (!cargaId) {
+        document.getElementById('cargoSummary').textContent = 'Nenhuma carga disponível para rastreamento.';
+        return;
+      }
+
+      const snapshot = FreteConectaAuth.getTrackingSnapshot(cargaId);
+      document.getElementById('statusValue').textContent = snapshot.situacao;
+      document.getElementById('etaValue').textContent = snapshot.previsaoChegada;
+      document.getElementById('driverValue').textContent = snapshot.motorista.nome;
+      document.getElementById('positionValue').textContent = snapshot.position.latitude.toFixed(2) + ', ' + snapshot.position.longitude.toFixed(2);
+      document.getElementById('cargoSummary').textContent = snapshot.origem + ' → ' + snapshot.destino + ' | ' + snapshot.status + ' | ' + (snapshot.isSimulated ? 'Rastreamento simulado' : 'GPS autorizado');
+      renderRouteList(snapshot);
+      renderMap(snapshot);
+    }
+
+    document.getElementById('btnStartSim').addEventListener('click', () => {
+      FreteConectaAuth.startTrackingSimulation(cargaId);
+      renderTracking();
+    });
+
+    document.getElementById('btnPauseSim').addEventListener('click', () => {
+      FreteConectaAuth.pauseTrackingSimulation(cargaId);
+      renderTracking();
+    });
+
+    document.getElementById('btnAdvanceSim').addEventListener('click', () => {
+      FreteConectaAuth.advanceTrackingSimulation(cargaId, 1);
+      renderTracking();
+    });
+
+    document.getElementById('btnRealGps').addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Este navegador não oferece suporte a geolocalização.');
+        return;
+      }
+      FreteConectaAuth.requestRealTrackingPermission(cargaId);
+      navigator.geolocation.getCurrentPosition((position) => {
+        FreteConectaAuth.setRealTrackingLocation(cargaId, {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+        renderTracking();
+      }, () => {
+        alert('A geolocalização foi negada. O sistema permanecerá em modo seguro e simulado.');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      });
+    });
+
+    renderTracking();
+  </script>
+</body>
+</html>

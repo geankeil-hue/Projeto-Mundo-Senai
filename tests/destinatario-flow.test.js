@@ -25,6 +25,7 @@ function createAuthSandbox() {
     },
     document,
     window: null,
+    globalThis: null,
     setTimeout,
     clearTimeout,
     Date,
@@ -38,6 +39,7 @@ function createAuthSandbox() {
   };
 
   sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
   vm.runInNewContext(source, sandbox, { filename: 'auth.js' });
   return sandbox;
 }
@@ -193,4 +195,170 @@ test('publicar carga deve persistir e listar corretamente com dados do embarcado
   assert.equal(cargasDoEmbarcador.length, 1);
   assert.equal(cargasDoEmbarcador[0].origem, 'São Paulo / SP');
   assert.equal(cargasDoEmbarcador[0].destino, 'Campinas / SP');
+});
+
+test('modo de demonstração cria conta separada e timeline com notificações', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  const demo = auth.createDemoScenario();
+  assert.ok(demo.users.embarcador);
+  assert.ok(demo.users.caminhoneiro);
+  assert.ok(demo.users.destinatario);
+
+  const carga = auth.publishCarga({
+    origem: 'São Paulo / SP',
+    destino: 'Campinas / SP',
+    tipo: 'Eletrônicos',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '2 t',
+    data: '2026-12-01',
+    valor: 'R$ 1.800,00',
+    observacoes: 'Entrega de demonstração'
+  }, demo.users.embarcador.id);
+
+  const aceita = auth.acceptCarga(carga.id, demo.users.caminhoneiro.id);
+  assert.equal(aceita.status, 'aceita');
+
+  const timeline = auth.getTimeline(carga.id);
+  assert.ok(Array.isArray(timeline) && timeline.length >= 2);
+
+  const notificacoes = auth.getNotificacoes(demo.users.embarcador.id);
+  assert.ok(notificacoes.some((item) => item.tipo === 'carga_aceita'));
+});
+
+test('entrega só pode ser confirmada após finalização e não aceita etapas fora de ordem', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  const demo = auth.createDemoScenario();
+  const carga = auth.publishCarga({
+    origem: 'Rio de Janeiro / RJ',
+    destino: 'Niterói / RJ',
+    tipo: 'Móveis',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '4 t',
+    data: '2026-12-05',
+    valor: 'R$ 2.500,00',
+    observacoes: 'Entrega com revisão'
+  }, demo.users.embarcador.id);
+
+  auth.acceptCarga(carga.id, demo.users.caminhoneiro.id);
+
+  assert.throws(() => auth.atualizarStatusEntrega(carga.id, 'recebimento_confirmado', demo.users.destinatario.id), /ordem|etapa|status/i);
+
+  const atualizada = auth.atualizarStatusEntrega(carga.id, 'entrega_finalizada', demo.users.caminhoneiro.id);
+  assert.equal(atualizada.status, 'entrega_finalizada');
+
+  const confirmada = auth.confirmarRecebimento(carga.id, demo.users.destinatario.id);
+  assert.equal(confirmada.status, 'recebimento_confirmado');
+});
+
+test('painel administrativo calcula indicadores reais a partir do banco local', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  const embarcador = auth.register({
+    nome: 'Empresa Alpha',
+    email: 'empresa@alpha.com',
+    cnpj: '11.222.333/0001-44',
+    senha: 'Alpha123',
+    role: 'embarcador'
+  });
+
+  const caminhoneiro = auth.register({
+    nome: 'Motorista 1',
+    email: 'motorista1@teste.com',
+    cpf: '12345678909',
+    senha: 'Moto123',
+    role: 'caminhoneiro'
+  });
+
+  auth.publishCarga({
+    origem: 'São Paulo / SP',
+    destino: 'Campinas / SP',
+    tipo: 'Eletrônicos',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '2 t',
+    data: '2026-11-10',
+    valor: 'R$ 1.800,00',
+    observacoes: 'Carga de teste'
+  }, embarcador.id);
+
+  const painel = auth.getAdminDashboardData();
+  assert.ok(painel.totalCargas >= 1);
+  assert.ok(painel.totalCaminhoneiros >= 1);
+  assert.ok(painel.totalEmpresas >= 1);
+  assert.ok(Array.isArray(painel.entregasPorMes));
+  assert.ok(Array.isArray(painel.rotasMaisUtilizadas));
+});
+
+test('rastreamento de carga expõe rota, motorista e simulação com posição atual', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaUsers', JSON.stringify([
+    {
+      id: 'emb-01',
+      nome: 'Empresa Beta',
+      email: 'beta@empresa.com',
+      senha: 'sha256:teste',
+      cnpj: '56.789.123/0001-88',
+      role: 'embarcador',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'cam-01',
+      nome: 'Motorista Rastreado',
+      email: 'rastreado@teste.com',
+      senha: 'sha256:teste',
+      cpf: '99988877766',
+      role: 'caminhoneiro',
+      createdAt: new Date().toISOString()
+    }
+  ]));
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'cam-01',
+    nome: 'Motorista Rastreado',
+    email: 'rastreado@teste.com',
+    role: 'caminhoneiro'
+  }));
+
+  sandbox.localStorage.setItem('freteConectaCargas', JSON.stringify([
+    {
+      id: 'carga-track-1',
+      userId: 'emb-01',
+      userEmail: 'beta@empresa.com',
+      origem: 'São Paulo / SP',
+      destino: 'Campinas / SP',
+      tipo: 'Alimentos',
+      regiaoOrigem: 'Sudeste',
+      regiaoPublicacao: 'Sudeste',
+      peso: '3 t',
+      data: '2026-11-12',
+      valor: 'R$ 2.600,00',
+      observacoes: 'Entrega com rastreio',
+      status: 'aceita',
+      caminhoneiroId: 'cam-01',
+      caminhoneiroNome: 'Motorista Rastreado',
+      createdAt: new Date().toISOString(),
+      historico: [{ evento: 'aceita', data: new Date().toISOString(), usuarioId: 'cam-01', usuarioNome: 'Motorista Rastreado' }]
+    }
+  ]));
+
+  const tracking = auth.getTrackingSnapshot('carga-track-1');
+
+  assert.equal(tracking.cargaId, 'carga-track-1');
+  assert.equal(tracking.motorista.nome, 'Motorista Rastreado');
+  assert.ok(Array.isArray(tracking.rota));
+  assert.ok(tracking.rota.length >= 2);
+
+  const simulation = auth.startTrackingSimulation('carga-track-1');
+  assert.equal(simulation.mode, 'simulado');
+  assert.ok(simulation.position && simulation.position.latitude !== undefined);
+  assert.ok(typeof simulation.isRunning === 'boolean');
 });

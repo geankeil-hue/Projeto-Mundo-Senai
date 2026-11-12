@@ -5,11 +5,8 @@
   const ROLE_NAMES = ['caminhoneiro', 'embarcador', 'destinatario'];
 
   function getStorage() {
-    if (typeof window !== 'undefined' && window.localStorage) {
+    if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.getItem === 'function') {
       return window.localStorage;
-    }
-    if (typeof localStorage !== 'undefined') {
-      return localStorage;
     }
     return null;
   }
@@ -510,6 +507,320 @@
     });
   }
 
+  function normalizeStatusKey(value) {
+    const mapping = {
+      'carga publicada': 'publicada',
+      'publicada': 'publicada',
+      'disponivel': 'publicada',
+      'motorista aceitou a entrega': 'aceita',
+      'motorista aceitou': 'aceita',
+      'aceita': 'aceita',
+      'motorista a caminho da retirada': 'retirada',
+      'a caminho da retirada': 'retirada',
+      'retirada': 'retirada',
+      'motorista chegou ao local de retirada': 'retirada_confirmada',
+      'chegou ao local de retirada': 'retirada_confirmada',
+      'carga coletada': 'coletada',
+      'coletada': 'coletada',
+      'em transporte': 'em_transporte',
+      'transporte': 'em_transporte',
+      'motorista chegou ao destino': 'destino_alcancado',
+      'destino alcancado': 'destino_alcancado',
+      'entrega finalizada pelo motorista': 'entrega_finalizada',
+      'entrega finalizada': 'entrega_finalizada',
+      'finalizada': 'entrega_finalizada',
+      'recebimento confirmado pelo destinatario': 'recebimento_confirmado',
+      'recebimento confirmado': 'recebimento_confirmado',
+      'confirmado': 'recebimento_confirmado'
+    };
+    const text = String(value ?? '').trim().toLowerCase();
+    return mapping[text] || text.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'publicada';
+  }
+
+  function getDeliveryStatusFlow() {
+    return [
+      { key: 'publicada', label: 'CARGA PUBLICADA', order: 1 },
+      { key: 'aceita', label: 'MOTORISTA ACEITOU A ENTREGA', order: 2 },
+      { key: 'retirada', label: 'MOTORISTA A CAMINHO DA RETIRADA', order: 3 },
+      { key: 'retirada_confirmada', label: 'MOTORISTA CHEGOU AO LOCAL DE RETIRADA', order: 4 },
+      { key: 'coletada', label: 'CARGA COLETADA', order: 5 },
+      { key: 'em_transporte', label: 'EM TRANSPORTE', order: 6 },
+      { key: 'destino_alcancado', label: 'MOTORISTA CHEGOU AO DESTINO', order: 7 },
+      { key: 'entrega_finalizada', label: 'ENTREGA FINALIZADA PELO MOTORISTA', order: 8 },
+      { key: 'recebimento_confirmado', label: 'RECEBIMENTO CONFIRMADO PELO DESTINATÁRIO', order: 9 }
+    ];
+  }
+
+  function getStatusLabel(status) {
+    const flow = getDeliveryStatusFlow();
+    const normalized = normalizeStatusKey(status);
+    const item = flow.find((entry) => entry.key === normalized);
+    return item ? item.label : String(status || 'publicada').toUpperCase();
+  }
+
+  function listNotifications() {
+    const storage = getStorage();
+    if (!storage) {
+      return [];
+    }
+    try {
+      return JSON.parse(storage.getItem('freteConectaNotificacoes') || '[]');
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveNotifications(notifications) {
+    const storage = getStorage();
+    if (!storage) {
+      return notifications;
+    }
+    storage.setItem('freteConectaNotificacoes', JSON.stringify(Array.isArray(notifications) ? notifications : []));
+    return notifications;
+  }
+
+  function addNotification(userId, payload) {
+    if (!userId) {
+      return null;
+    }
+    const notification = {
+      id: `notif-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      userId: String(userId),
+      tipo: String(payload && payload.tipo ? payload.tipo : 'sistema'),
+      mensagem: String(payload && payload.mensagem ? payload.mensagem : 'Atualização do sistema'),
+      cargaId: payload && payload.cargaId ? String(payload.cargaId) : '',
+      lida: false,
+      createdAt: new Date().toISOString()
+    };
+    const notifications = listNotifications();
+    notifications.unshift(notification);
+    saveNotifications(notifications);
+    return notification;
+  }
+
+  function getDemoUsersMap() {
+    const users = readJSON('freteConectaDemoUsers', []);
+    return {
+      embarcador: users.find((user) => user && user.role === 'embarcador') || null,
+      caminhoneiro: users.find((user) => user && user.role === 'caminhoneiro') || null,
+      destinatario: users.find((user) => user && user.role === 'destinatario') || null
+    };
+  }
+
+  function writeDemoUsers(users) {
+    writeJSON('freteConectaDemoUsers', Array.isArray(users) ? users : []);
+    return Array.isArray(users) ? users : [];
+  }
+
+  function ensureDemoScenario() {
+    const demoUsers = getDemoUsersMap();
+    if (demoUsers.embarcador && demoUsers.caminhoneiro && demoUsers.destinatario) {
+      return demoUsers;
+    }
+
+    const freshUsers = [
+      { id: 'demo-embarcador', nome: 'Embarcador Demo', email: 'embarcador@demo.com', senha: 'Demo123', cnpj: '11.222.333/0001-44', role: 'embarcador', isDemo: true, createdAt: new Date().toISOString() },
+      { id: 'demo-caminhoneiro', nome: 'Caminhoneiro Demo', email: 'caminhoneiro@demo.com', senha: 'Demo123', cpf: '12345678909', role: 'caminhoneiro', isDemo: true, createdAt: new Date().toISOString() },
+      { id: 'demo-destinatario', nome: 'Destinatário Demo', email: 'destinatario@demo.com', senha: 'Demo123', cpf: '98765432100', role: 'destinatario', isDemo: true, createdAt: new Date().toISOString() }
+    ];
+    writeDemoUsers(freshUsers);
+    return getDemoUsersMap();
+  }
+
+  function resolveUserById(userId) {
+    const users = [...readUsers(), ...readJSON('freteConectaDemoUsers', [])];
+    const match = users.find((user) => {
+      const parsed = parseUser(user);
+      return parsed && String(parsed.id) === String(userId);
+    });
+    return match ? parseUser(match) : null;
+  }
+
+  function pushHistorico(carga, evento, usuarioId, usuarioNome, extras = {}) {
+    const historico = Array.isArray(carga.historico) ? carga.historico.slice() : [];
+    historico.push({
+      evento: String(evento || 'atualizacao'),
+      data: new Date().toISOString(),
+      usuarioId: usuarioId ? String(usuarioId) : '',
+      usuarioNome: String(usuarioNome || 'Sistema'),
+      ...extras
+    });
+    return historico;
+  }
+
+  function getAppCargas() {
+    const real = readCargas();
+    const demo = readJSON('freteConectaDemoCargas', []);
+    return [...real, ...demo].filter(Boolean).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
+
+  function getAppUsers() {
+    const real = readUsers();
+    const demo = readJSON('freteConectaDemoUsers', []);
+    return [...real, ...demo].filter(Boolean);
+  }
+
+  function parseCurrency(value) {
+    const text = String(value ?? '').replace(/[R$\s.]/g, '').replace(',', '.');
+    const clean = text.replace(/[^\d.-]/g, '');
+    const number = Number(clean || 0);
+    return Number.isFinite(number) ? number : 0;
+  }
+
+  function buildMonthlySeries(cargas, months = 6) {
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const now = new Date();
+    const series = [];
+
+    for (let index = months - 1; index >= 0; index -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = monthNames[date.getMonth()];
+      const value = cargas.filter((carga) => {
+        const sourceDate = new Date(carga.createdAt || carga.data || Date.now());
+        if (Number.isNaN(sourceDate.getTime())) {
+          return false;
+        }
+        return sourceDate.toISOString().slice(0, 7) === key;
+      }).length;
+      series.push({ label, key, value });
+    }
+
+    return series;
+  }
+
+  function buildRotasMaisUtilizadas(cargas) {
+    const map = new Map();
+    cargas.forEach((carga) => {
+      const origem = String(carga.origem || '').trim();
+      const destino = String(carga.destino || '').trim();
+      if (!origem || !destino) {
+        return;
+      }
+      const key = `${origem} → ${destino}`;
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+
+    return Array.from(map.entries())
+      .map(([route, count]) => ({ route, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }
+
+  function getDashboardInfo(cargas, users) {
+    const totalCargas = cargas.length;
+    const totalCaminhoneiros = users.filter((user) => normalizeRole(user?.role) === 'caminhoneiro').length;
+    const totalEmpresas = users.filter((user) => normalizeRole(user?.role) === 'embarcador').length;
+    const faturamento = cargas.reduce((sum, carga) => sum + parseCurrency(carga.valor), 0);
+
+    return {
+      totalCargas,
+      totalCaminhoneiros,
+      totalEmpresas,
+      faturamentoEstimado: faturamento,
+      entregasPorMes: buildMonthlySeries(cargas, 6),
+      rotasMaisUtilizadas: buildRotasMaisUtilizadas(cargas),
+      entregasAtivas: cargas.filter((carga) => ['aceita', 'retirada', 'retirada_confirmada', 'coletada', 'em_transporte', 'destino_alcancado', 'entrega_finalizada'].includes(normalizeStatusKey(carga.status || 'publicada'))).length
+    };
+  }
+
+  function getCityCoordinates(cityName) {
+    const clean = String(cityName || '').trim().toLowerCase();
+    const list = {
+      'sao paulo': { latitude: -23.5505, longitude: -46.6333 },
+      'campinas': { latitude: -22.9068, longitude: -47.0616 },
+      'curitiba': { latitude: -25.4284, longitude: -49.2733 },
+      'rio de janeiro': { latitude: -22.9068, longitude: -43.1729 },
+      'niteroi': { latitude: -22.8833, longitude: -43.1036 },
+      'salvador': { latitude: -12.9777, longitude: -38.5016 },
+      'feira de santana': { latitude: -12.2628, longitude: -38.9666 },
+      'belo horizonte': { latitude: -19.9167, longitude: -43.9345 },
+      'uberlandia': { latitude: -18.9186, longitude: -48.2772 },
+      'florianopolis': { latitude: -27.5949, longitude: -48.5482 },
+      'joinville': { latitude: -26.3045, longitude: -48.8455 },
+      'porto alegre': { latitude: -30.0346, longitude: -51.2177 },
+      'caxias do sul': { latitude: -29.1678, longitude: -51.1794 },
+      'goiania': { latitude: -16.6869, longitude: -49.2648 },
+      'anapolis': { latitude: -16.3261, longitude: -48.9524 },
+      'brasilia': { latitude: -15.7939, longitude: -47.8828 },
+      'goias': { latitude: -15.7942, longitude: -47.8828 },
+      'recife': { latitude: -8.0476, longitude: -34.877 },
+      'caruaru': { latitude: -8.2831, longitude: -35.9769 },
+      'fortaleza': { latitude: -3.7319, longitude: -38.5267 },
+      'juazeiro do norte': { latitude: -7.2131, longitude: -39.3153 },
+      'belem': { latitude: -1.4558, longitude: -48.4902 },
+      'santarem': { latitude: -2.444, longitude: -54.7087 },
+      'sao jose dos pinhais': { latitude: -25.539, longitude: -49.2112 }
+    };
+
+    if (!clean) {
+      return { latitude: -23.5505, longitude: -46.6333 };
+    }
+
+    const match = Object.keys(list).find((key) => clean.includes(key));
+    return match ? list[match] : { latitude: -23.5505, longitude: -46.6333 };
+  }
+
+  function buildRoutePoints(origem, destino) {
+    const start = getCityCoordinates(origem);
+    const end = getCityCoordinates(destino);
+    const route = [];
+    const steps = 6;
+
+    for (let index = 0; index <= steps; index += 1) {
+      const factor = steps === 0 ? 0 : index / steps;
+      const latitude = start.latitude + ((end.latitude - start.latitude) * factor);
+      const longitude = start.longitude + ((end.longitude - start.longitude) * factor);
+      route.push({
+        latitude: Number(latitude.toFixed(6)),
+        longitude: Number(longitude.toFixed(6)),
+        label: index === 0 ? 'Origem' : index === steps ? 'Destino' : `Ponto ${index}`
+      });
+    }
+
+    return route;
+  }
+
+  function getTrackingStorageKey(cargaId) {
+    return `freteConectaTracking_${String(cargaId || 'global')}`;
+  }
+
+  function readTrackingState(cargaId) {
+    const storage = getStorage();
+    if (!storage) {
+      return null;
+    }
+    try {
+      const item = storage.getItem(getTrackingStorageKey(cargaId));
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeTrackingState(cargaId, state) {
+    const storage = getStorage();
+    if (!storage) {
+      return state;
+    }
+    storage.setItem(getTrackingStorageKey(cargaId), JSON.stringify(state));
+    return state;
+  }
+
+  function formatEtaFromRoute(route, currentIndex) {
+    const total = Math.max(route.length - 1, 1);
+    const remaining = Math.max(total - currentIndex, 0);
+    const minutes = remaining * 18;
+    const eta = new Date(Date.now() + minutes * 60000);
+    return eta.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   const FreteConectaAuth = {
     getUsers: readUsers,
     getCargas: readCargas,
@@ -946,8 +1257,8 @@
       setCurrentSessionUser(sessionUser);
       return sessionUser;
     },
-    publishCarga(carga) {
-      const usuario = this.currentUser();
+    publishCarga(carga, userIdOverride) {
+      const usuario = (userIdOverride ? resolveUserById(userIdOverride) : this.currentUser()) || this.currentUser();
       if (!usuario) {
         throw new Error('Faça login para publicar uma carga.');
       }
@@ -968,7 +1279,7 @@
         data: String(carga?.data || '').trim(),
         valor: String(carga?.valor || '').trim(),
         observacoes: String(carga?.observacoes || '').trim(),
-        status: 'disponivel',
+        status: 'publicada',
         caminhoneiroId: '',
         caminhoneiroNome: '',
         createdAt: new Date().toISOString(),
@@ -979,26 +1290,396 @@
         throw new Error('Preencha todos os campos obrigatórios para publicar a carga.');
       }
 
-      const cargas = readCargas();
+      const dataStore = usuario.isDemo ? 'freteConectaDemoCargas' : 'freteConectaCargas';
+      const cargas = readJSON(dataStore, []);
       cargas.unshift(payload);
-      writeCargas(cargas);
+      writeJSON(dataStore, cargas);
+      addNotification(usuario.id, {
+        tipo: 'nova_carga',
+        mensagem: `Carga publicada: ${payload.origem} → ${payload.destino}`,
+        cargaId: payload.id
+      });
       return payload;
     },
     getCargas() {
-      return readCargas().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return getAppCargas();
+    },
+    getAdminDashboardData(filters = {}) {
+      const users = getAppUsers();
+      const cargas = getAppCargas();
+      const filtered = filters.empresa || filters.estado || filters.period || filters.situacao ? {
+        cargas: cargas.filter((carga) => {
+          if (filters.empresa && String(carga.userId || '') !== String(filters.empresa)) {
+            return false;
+          }
+          if (filters.estado) {
+            const estado = String(filters.estado).trim().toUpperCase();
+            const origem = String(carga.origem || '').toUpperCase();
+            const destino = String(carga.destino || '').toUpperCase();
+            if (!origem.includes(`/${estado}`) && !destino.includes(`/${estado}`) && !origem.includes(`(${estado})`) && !destino.includes(`(${estado})`)) {
+              return false;
+            }
+          }
+          if (filters.situacao && normalizeStatusKey(carga.status || 'publicada') !== normalizeStatusKey(filters.situacao)) {
+            return false;
+          }
+          if (filters.period && Number(filters.period)) {
+            const days = Number(filters.period);
+            const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+            const source = new Date(carga.createdAt || carga.data || Date.now()).getTime();
+            if (Number.isFinite(source) && source < cutoff) {
+              return false;
+            }
+          }
+          return true;
+        }),
+        users
+      } : { cargas, users };
+
+      return getDashboardInfo(filtered.cargas, filtered.users);
     },
     getCargasDisponiveis() {
-      return this.getCargas().filter((carga) => !carga.status || (carga.status !== 'aceita' && carga.status !== 'em_corrida' && carga.status !== 'cancelada'));
+      return this.getCargas().filter((carga) => {
+        const status = normalizeStatusKey(carga.status || 'publicada');
+        return status === 'publicada' || status === 'aceita' || status === 'retirada' || status === 'retirada_confirmada' || status === 'coletada' || status === 'em_transporte' || status === 'destino_alcancado' || status === 'entrega_finalizada';
+      });
     },
     getCargasDoCaminhoneiro(usuarioId) {
       const usuario = usuarioId || this.currentUser()?.id;
       if (!usuario) {
         return [];
       }
-      return readCargas().filter((carga) => String(carga.caminhoneiroId) === String(usuario));
+      return this.getCargas().filter((carga) => String(carga.caminhoneiroId) === String(usuario));
     },
-    acceptCarga(cargaId) {
-      const usuario = this.currentUser();
+    getNotificacoes(userId) {
+      const targetId = userId || this.currentUser()?.id;
+      if (!targetId) {
+        return [];
+      }
+      return listNotifications().filter((notificacao) => String(notificacao.userId) === String(targetId));
+    },
+    getTimeline(cargaId) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        return [];
+      }
+      return Array.isArray(carga.historico) ? carga.historico : [];
+    },
+    getTrackingSnapshot(cargaId) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para rastreamento.');
+      }
+
+      const motorista = carga.caminhoneiroId ? resolveUserById(carga.caminhoneiroId) : null;
+      const rota = buildRoutePoints(carga.origem, carga.destino);
+      const stored = readTrackingState(carga.id) || {
+        cargaId: carga.id,
+        mode: 'simulado',
+        isRunning: true,
+        currentIndex: 0,
+        position: rota[0],
+        route: rota,
+        lastUpdated: new Date().toISOString(),
+        isAuthorized: false
+      };
+
+      const currentIndex = Math.min(Number(stored.currentIndex || 0), Math.max(rota.length - 1, 0));
+      const position = stored.position && stored.position.latitude !== undefined && stored.position.longitude !== undefined
+        ? stored.position
+        : rota[currentIndex] || rota[0];
+
+      return {
+        cargaId: carga.id,
+        origem: carga.origem,
+        destino: carga.destino,
+        status: carga.status,
+        situacao: getStatusLabel(carga.status),
+        motorista: {
+          id: motorista?.id || carga.caminhoneiroId || '',
+          nome: motorista?.nome || carga.caminhoneiroNome || 'Motorista não definido'
+        },
+        rota,
+        position,
+        previsaoChegada: formatEtaFromRoute(rota, currentIndex),
+        mode: stored.mode === 'real' ? 'real' : 'simulado',
+        isSimulated: stored.mode !== 'real',
+        isRunning: Boolean(stored.isRunning),
+        isAuthorized: Boolean(stored.isAuthorized),
+        lastUpdated: stored.lastUpdated || new Date().toISOString(),
+        mensagem: 'Localização simulada para demonstração. O GPS real só aparece com autorização do motorista.'
+      };
+    },
+    startTrackingSimulation(cargaId) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para iniciar a simulação.');
+      }
+
+      const rota = buildRoutePoints(carga.origem, carga.destino);
+      const state = {
+        cargaId: carga.id,
+        mode: 'simulado',
+        isRunning: true,
+        currentIndex: 0,
+        route: rota,
+        position: rota[0],
+        lastUpdated: new Date().toISOString(),
+        isAuthorized: false
+      };
+      writeTrackingState(carga.id, state);
+      return { ...state, status: carga.status, mode: 'simulado', isSimulated: true };
+    },
+    pauseTrackingSimulation(cargaId) {
+      const snapshot = this.getTrackingSnapshot(cargaId);
+      const stored = readTrackingState(cargaId) || {};
+      const next = {
+        ...stored,
+        cargaId,
+        mode: 'simulado',
+        isRunning: false,
+        position: snapshot.position,
+        route: snapshot.rota,
+        lastUpdated: new Date().toISOString()
+      };
+      writeTrackingState(cargaId, next);
+      return { ...next, isSimulated: true, mode: 'simulado' };
+    },
+    advanceTrackingSimulation(cargaId, steps = 1) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para avançar a simulação.');
+      }
+      const snapshot = this.getTrackingSnapshot(cargaId);
+      const route = snapshot.rota;
+      const stepCount = Number(steps) || 1;
+      const currentIndex = Math.min(Math.max(Math.round(snapshot.position && snapshot.position.latitude !== undefined ? route.findIndex((point) => point.latitude === snapshot.position.latitude && point.longitude === snapshot.position.longitude) : 0), 0) + stepCount, route.length - 1);
+      const position = route[currentIndex];
+      const next = {
+        cargaId: carga.id,
+        mode: 'simulado',
+        isRunning: true,
+        currentIndex,
+        route,
+        position,
+        lastUpdated: new Date().toISOString(),
+        isAuthorized: false
+      };
+      writeTrackingState(carga.id, next);
+      return { ...next, status: carga.status, mode: 'simulado', isSimulated: true };
+    },
+    setRealTrackingLocation(cargaId, coords) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para atualizar a localização real.');
+      }
+      const stored = readTrackingState(carga.id) || {};
+      const next = {
+        ...stored,
+        cargaId: carga.id,
+        mode: 'real',
+        isRunning: true,
+        isAuthorized: true,
+        position: {
+          latitude: Number(coords?.latitude ?? 0),
+          longitude: Number(coords?.longitude ?? 0),
+          accuracy: Number(coords?.accuracy ?? 0),
+          source: 'gps'
+        },
+        route: buildRoutePoints(carga.origem, carga.destino),
+        lastUpdated: new Date().toISOString()
+      };
+      writeTrackingState(carga.id, next);
+      return { ...next, mode: 'real', isSimulated: false, status: carga.status };
+    },
+    requestRealTrackingPermission(cargaId) {
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada para autorização de rastreio.');
+      }
+      const stored = readTrackingState(carga.id) || {};
+      const next = {
+        ...stored,
+        cargaId: carga.id,
+        mode: 'real',
+        isRunning: false,
+        isAuthorized: false,
+        permissionStatus: 'pending',
+        route: buildRoutePoints(carga.origem, carga.destino),
+        lastUpdated: new Date().toISOString()
+      };
+      writeTrackingState(carga.id, next);
+      return { ...next, mode: 'real', isSimulated: false };
+    },
+    createDemoScenario() {
+      const demoUsers = ensureDemoScenario();
+      const demoCargas = readJSON('freteConectaDemoCargas', []);
+      const scenarioData = {
+        users: demoUsers,
+        cargas: demoCargas,
+        createdAt: new Date().toISOString()
+      };
+      if (!demoCargas.length) {
+        const embarcador = demoUsers.embarcador;
+        const caminhoneiro = demoUsers.caminhoneiro;
+        const destinatario = demoUsers.destinatario;
+        const carga = this.publishCarga({
+          origem: 'São Paulo / SP',
+          destino: 'Campinas / SP',
+          tipo: 'Eletrônicos',
+          regiaoOrigem: 'Sudeste',
+          regiaoPublicacao: 'Sudeste',
+          peso: '2 t',
+          data: '2026-12-01',
+          valor: 'R$ 1.800,00',
+          observacoes: 'Carga demonstrativa para simulação completa',
+          destinatarioNome: destinatario.nome,
+          destinatarioEmail: destinatario.email
+        }, embarcador.id);
+        this.acceptCarga(carga.id, caminhoneiro.id);
+        this.atualizarStatusEntrega(carga.id, 'retirada', caminhoneiro.id);
+        this.atualizarStatusEntrega(carga.id, 'retirada_confirmada', caminhoneiro.id);
+        this.atualizarStatusEntrega(carga.id, 'coletada', caminhoneiro.id);
+        this.atualizarStatusEntrega(carga.id, 'em_transporte', caminhoneiro.id);
+        this.atualizarStatusEntrega(carga.id, 'destino_alcancado', caminhoneiro.id);
+        this.atualizarStatusEntrega(carga.id, 'entrega_finalizada', caminhoneiro.id);
+        this.confirmarRecebimento(carga.id, destinatario.id);
+        scenarioData.cargas = readJSON('freteConectaDemoCargas', []);
+      }
+      return scenarioData;
+    },
+    resetDemoData() {
+      const demoUsers = ensureDemoScenario();
+      writeJSON('freteConectaDemoCargas', []);
+      writeJSON('freteConectaNotificacoes', []);
+      return this.createDemoScenario();
+    },
+    atualizarStatusEntrega(cargaId, novoStatus, userIdOverride) {
+      const usuario = userIdOverride ? resolveUserById(userIdOverride) || this.currentUser() : this.currentUser();
+      if (!usuario) {
+        throw new Error('Faça login para atualizar o status da entrega.');
+      }
+
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada.');
+      }
+
+      const flow = getDeliveryStatusFlow();
+      const atual = normalizeStatusKey(carga.status || 'publicada');
+      const alvo = normalizeStatusKey(novoStatus);
+      const indexAtual = flow.findIndex((entry) => entry.key === atual);
+      const indexAlvo = flow.findIndex((entry) => entry.key === alvo);
+
+      if (indexAlvo === -1) {
+        throw new Error('Status inválido para a entrega.');
+      }
+      if (indexAtual === -1) {
+        throw new Error('Status atual da carga não pôde ser validado.');
+      }
+      if (indexAlvo < indexAtual) {
+        throw new Error('Etapa de entrega fora da ordem correta. Siga a sequência do status atual.');
+      }
+      if (alvo === 'recebimento_confirmado' && indexAtual < flow.findIndex((entry) => entry.key === 'entrega_finalizada')) {
+        throw new Error('Status fora da ordem correta: o recebimento só pode ser confirmado após a entrega finalizada pelo motorista.');
+      }
+
+      const userRole = usuario.role;
+      const permitidoPara = {
+        'publicada': ['embarcador'],
+        'aceita': ['caminhoneiro'],
+        'retirada': ['caminhoneiro'],
+        'retirada_confirmada': ['caminhoneiro'],
+        'coletada': ['caminhoneiro'],
+        'em_transporte': ['caminhoneiro'],
+        'destino_alcancado': ['caminhoneiro'],
+        'entrega_finalizada': ['caminhoneiro'],
+        'recebimento_confirmado': ['destinatario']
+      };
+
+      if (!permitidoPara[alvo] || !permitidoPara[alvo].includes(userRole)) {
+        throw new Error('Este usuário não tem permissão para atualizar essa etapa do transporte.');
+      }
+
+      const cargaAtualizada = {
+        ...carga,
+        status: alvo,
+        historico: pushHistorico(carga, alvo, usuario.id, usuario.nome || usuario.email, { etapa: getStatusLabel(alvo) })
+      };
+
+      const storageKey = carga.userId && resolveUserById(carga.userId)?.isDemo ? 'freteConectaDemoCargas' : 'freteConectaCargas';
+      const cargas = readJSON(storageKey, []);
+      const index = cargas.findIndex((item) => String(item.id) === String(carga.id));
+      if (index >= 0) {
+        cargas[index] = cargaAtualizada;
+        writeJSON(storageKey, cargas);
+      }
+
+      const messageMap = {
+        'aceita': 'Carga aceita e atribuída ao caminhoneiro.',
+        'retirada': 'Motorista em deslocamento para a retirada da carga.',
+        'retirada_confirmada': 'Motorista chegou ao local de retirada.',
+        'coletada': 'Carga coletada com sucesso.',
+        'em_transporte': 'Carga em transporte.',
+        'destino_alcancado': 'Motorista chegou ao destino.',
+        'entrega_finalizada': 'Entrega finalizada pelo motorista.',
+        'recebimento_confirmado': 'Recebimento confirmado pelo destinatário.'
+      };
+
+      const destinatario = resolveUserById(carga.destinatarioId || '') || resolveUserById(carga.userId || '');
+      if (carga.userId) {
+        addNotification(carga.userId, { tipo: 'status_entrega', cargaId: carga.id, mensagem: messageMap[alvo] || 'Status atualizado da entrega.' });
+      }
+      if (carga.caminhoneiroId) {
+        addNotification(carga.caminhoneiroId, { tipo: 'status_entrega', cargaId: carga.id, mensagem: messageMap[alvo] || 'Status atualizado da entrega.' });
+      }
+      if (destinatario && String(destinatario.id) !== String(carga.userId)) {
+        addNotification(destinatario.id, { tipo: 'status_entrega', cargaId: carga.id, mensagem: messageMap[alvo] || 'Status atualizado da entrega.' });
+      }
+
+      return cargaAtualizada;
+    },
+    confirmarRecebimento(cargaId, userIdOverride) {
+      const usuario = userIdOverride ? resolveUserById(userIdOverride) || this.currentUser() : this.currentUser();
+      if (!usuario) {
+        throw new Error('Faça login para confirmar o recebimento.');
+      }
+      if (usuario.role !== 'destinatario') {
+        throw new Error('Apenas o destinatário pode confirmar o recebimento.');
+      }
+
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada.');
+      }
+      if (normalizeStatusKey(carga.status) !== 'entrega_finalizada') {
+        throw new Error('O recebimento só pode ser confirmado após a entrega finalizada pelo motorista.');
+      }
+
+      const atualizada = {
+        ...carga,
+        status: 'recebimento_confirmado',
+        destinatarioId: usuario.id,
+        confirmadoEm: new Date().toISOString(),
+        historico: pushHistorico(carga, 'recebimento_confirmado', usuario.id, usuario.nome || usuario.email, { etapa: 'RECEBIMENTO CONFIRMADO PELO DESTINATÁRIO' })
+      };
+
+      const storageKey = carga.userId && resolveUserById(carga.userId)?.isDemo ? 'freteConectaDemoCargas' : 'freteConectaCargas';
+      const cargas = readJSON(storageKey, []);
+      const index = cargas.findIndex((item) => String(item.id) === String(carga.id));
+      if (index >= 0) {
+        cargas[index] = atualizada;
+        writeJSON(storageKey, cargas);
+      }
+
+      addNotification(carga.userId, { tipo: 'recebimento_confirmado', cargaId: carga.id, mensagem: 'Recebimento confirmado pelo destinatário.' });
+      if (carga.caminhoneiroId) {
+        addNotification(carga.caminhoneiroId, { tipo: 'recebimento_confirmado', cargaId: carga.id, mensagem: 'Recebimento confirmado pelo destinatário.' });
+      }
+      return atualizada;
+    },
+    acceptCarga(cargaId, userIdOverride) {
+      const usuario = userIdOverride ? resolveUserById(userIdOverride) || this.currentUser() : this.currentUser();
       if (!usuario) {
         throw new Error('Faça login para aceitar uma carga.');
       }
@@ -1006,14 +1687,12 @@
         throw new Error('Apenas caminhoneiros podem aceitar uma carga.');
       }
 
-      const cargas = readCargas();
-      const index = cargas.findIndex((carga) => String(carga.id) === String(cargaId));
-      if (index === -1) {
+      const cargas = getAppCargas();
+      const carga = cargas.find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
         throw new Error('Carga não encontrada.');
       }
-
-      const carga = cargas[index];
-      if (carga.status === 'cancelada') {
+      if (normalizeStatusKey(carga.status || 'publicada') === 'cancelada') {
         throw new Error('Esta carga foi cancelada e não pode ser aceita.');
       }
       if (carga.status === 'aceita' && carga.caminhoneiroId && carga.caminhoneiroId !== usuario.id) {
@@ -1022,8 +1701,8 @@
       if (carga.status === 'aceita' && carga.caminhoneiroId === usuario.id) {
         return carga;
       }
-      if (carga.status === 'em_corrida' && carga.caminhoneiroId === usuario.id) {
-        return carga;
+      if (normalizeStatusKey(carga.status) === 'entrega_finalizada' || normalizeStatusKey(carga.status) === 'recebimento_confirmado') {
+        throw new Error('Não é possível assumir uma entrega que já foi concluída.');
       }
 
       const atualizada = {
@@ -1033,14 +1712,18 @@
         caminhoneiroNome: usuario.nome || usuario.email,
         transportador: usuario.nome || usuario.email,
         aceitaEm: new Date().toISOString(),
-        historico: Array.isArray(carga.historico) ? [
-          ...carga.historico,
-          { evento: 'aceita', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email }
-        ] : [{ evento: 'aceita', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email }]
+        historico: pushHistorico(carga, 'aceita', usuario.id, usuario.nome || usuario.email)
       };
 
-      cargas[index] = atualizada;
-      writeCargas(cargas);
+      const storageKey = carga.userId && resolveUserById(carga.userId)?.isDemo ? 'freteConectaDemoCargas' : 'freteConectaCargas';
+      const lista = readJSON(storageKey, []);
+      const index = lista.findIndex((item) => String(item.id) === String(carga.id));
+      if (index >= 0) {
+        lista[index] = atualizada;
+        writeJSON(storageKey, lista);
+      }
+
+      addNotification(carga.userId, { tipo: 'carga_aceita', cargaId: carga.id, mensagem: `${usuario.nome || 'Caminhoneiro'} aceitou a carga.` });
       return atualizada;
     },
     cancelCarga(cargaId, motivo = 'Cancelada pelo usuário') {
