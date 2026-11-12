@@ -328,7 +328,8 @@
            BOTÕES
         ========================== */
 
-        .btn-entra {
+        .btn-login,
+        .btn-entrar {
             width: 100%;
             height: 57px;
             border: none;
@@ -338,9 +339,10 @@
             font-size: 17px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.25s ease;
         }
 
+        .btn-login:hover,
         .btn-entrar:hover {
             background: #e96400;
             transform: translateY(-1px);
@@ -685,7 +687,7 @@
                 <!-- BOTÃO ENTRAR -->
 
                 <button
-                    class="btn-entrar"
+                    class="btn-login"
                     onclick="entrar()"
                 >
                     ↪ Entrar como caminhoneiro
