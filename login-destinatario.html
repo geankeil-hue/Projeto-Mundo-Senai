@@ -5,107 +5,315 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login para Destinatário | Frete Conecta</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg, #0a2240, #081d33);
-      color: #fff;
+      background: linear-gradient(135deg, #061d32 0%, #0b2d4c 45%, #0e3b5d 100%);
+      color: #ffffff;
       min-height: 100vh;
     }
-    .page {
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .pagina {
       min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pagina::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255, 120, 0, 0.18), transparent 25%);
+      pointer-events: none;
+    }
+
+    header {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding: 24px 6%;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .logo:hover {
+      transform: translateY(-1px);
+      opacity: 0.9;
+    }
+
+    .logo-icon {
+      font-size: 22px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: #e6eef7;
+      font-size: 15px;
+      transition: 0.3s ease;
+    }
+
+    nav a:hover {
+      color: #ff8f2a;
+    }
+
+    .btn-primario {
+      background: #ff7000;
+      color: white;
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      transition: 0.3s ease;
+    }
+
+    .btn-primario:hover {
+      background: #ff811d;
+      transform: translateY(-2px);
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: center;
+      gap: 40px;
+      min-height: calc(100vh - 90px);
+      padding: 30px 6% 60px;
+    }
+
+    .texto {
+      max-width: 640px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: #dfeaf5;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      margin-bottom: 26px;
+    }
+
+    .tag span {
+      color: #59d0ff;
+      font-size: 18px;
+    }
+
+    h1 {
+      font-size: clamp(36px, 3.8vw, 58px);
+      line-height: 1.08;
+      margin-bottom: 18px;
+    }
+
+    h1 span {
+      color: #ff8f2a;
+    }
+
+    .descricao {
+      color: #bfd1e1;
+      font-size: 19px;
+      line-height: 1.7;
+      margin-bottom: 28px;
+      max-width: 600px;
+    }
+
+    .vantagens {
+      display: grid;
+      gap: 18px;
+    }
+
+    .vantagem {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+
+    .icone {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 32px 20px;
+      background: rgba(255,255,255,0.08);
+      font-size: 22px;
     }
+
+    .vantagem h3 {
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+
+    .vantagem p {
+      color: #a8bfd4;
+      font-size: 14px;
+    }
+
     .card {
+      background: #f5f8fb;
+      color: #0f2742;
+      border-radius: 22px;
+      padding: 34px 28px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.30);
+      max-width: 480px;
+      margin-left: auto;
       width: 100%;
-      max-width: 460px;
-      background: #f6f9fc;
-      color: #102847;
-      border-radius: 18px;
-      padding: 30px 26px;
-      box-shadow: 0 26px 80px rgba(0,0,0,0.22);
     }
-    .brand {
+
+    .card-top {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .card-logo {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      font-size: 27px;
-      font-weight: bold;
-      margin-bottom: 18px;
-    }
-    .brand span:first-child {
       font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 12px;
     }
+
+    .card-logo .fruta {
+      font-size: 34px;
+    }
+
     .card h2 {
-      text-align: center;
+      font-size: 30px;
       margin-bottom: 8px;
-      font-size: 28px;
     }
+
     .subtitulo {
-      text-align: center;
-      color: #5f7285;
-      margin-bottom: 24px;
-      line-height: 1.5;
+      color: #69839c;
+      font-size: 15px;
+      line-height: 1.6;
     }
-    .campo { margin-bottom: 18px; }
+
+    form {
+      margin-top: 26px;
+    }
+
+    .campo {
+      margin-bottom: 20px;
+    }
+
     .campo label {
       display: block;
       margin-bottom: 8px;
-      font-weight: bold;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1d3557;
     }
-    .campo .input-box {
+
+    .input-box {
       position: relative;
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border: 1px solid #d5dfeb;
-      border-radius: 12px;
-      overflow: hidden;
     }
-    .campo .input-box .icone {
-      width: 46px;
-      text-align: center;
-      color: #6f8195;
+
+    .input-box .icone {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7f92a8;
       font-size: 18px;
     }
-    .campo input {
+
+    .input-box input {
       width: 100%;
-      border: none;
-      outline: none;
-      padding: 16px 14px 16px 0;
+      height: 56px;
+      padding: 0 44px 0 42px;
+      border-radius: 12px;
+      border: 1px solid #c9d5e2;
+      background: #fff;
+      color: #1d3557;
       font-size: 15px;
-      background: transparent;
-      color: #102847;
+      outline: none;
     }
+
+    .input-box input:focus {
+      border-color: #ff7000;
+      box-shadow: 0 0 0 4px rgba(255, 112, 0, 0.12);
+    }
+
     .senha-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
       border: none;
       background: transparent;
       cursor: pointer;
       font-size: 18px;
-      padding: 0 14px 0 0;
+      color: #7d8da5;
     }
+
     .opcoes {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 10px 0 20px;
+      margin: 8px 0 22px;
       font-size: 14px;
       color: #53657a;
     }
+
     .lembrar {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
+    .lembrar input {
+      accent-color: #ff7000;
+    }
+
     .esqueceu {
       cursor: pointer;
       color: #0d5aa7;
-      font-weight: bold;
+      font-weight: 700;
     }
+
     .btn-login,
     .btn-secundario {
       width: 100%;
@@ -113,33 +321,50 @@
       border-radius: 12px;
       padding: 15px 18px;
       font-size: 16px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
       transition: .25s ease;
     }
+
     .btn-login {
       background: #ff7200;
       color: #fff;
+      font-size: 17px;
     }
-    .btn-login:hover { background: #e86400; }
+
+    .btn-login:hover {
+      background: #e86400;
+      transform: translateY(-1px);
+    }
+
     .btn-secundario {
       background: #edf4fb;
       color: #173d63;
       border: 1px solid #bfd1e6;
       margin-top: 16px;
     }
-    .btn-secundario:hover { background: #e6f1fb; }
+
+    .btn-secundario:hover {
+      background: #e6f1fb;
+    }
+
     .links-rapidos {
       margin-top: 18px;
       padding-top: 18px;
       border-top: 1px solid #dfe8f2;
       text-align: center;
+      background: #edf4fa;
+      border: 1px solid #d8e2ec;
+      border-radius: 12px;
+      padding: 18px;
     }
+
     .links-rapidos p {
       font-size: 14px;
       color: #53657a;
       margin-bottom: 8px;
     }
+
     .links-rapidos a {
       display: block;
       color: #1464b5;
@@ -147,6 +372,7 @@
       font-weight: bold;
       margin: 6px 0;
     }
+
     .mensagem {
       display: none;
       margin-top: 16px;
@@ -156,55 +382,123 @@
       font-weight: bold;
       text-align: center;
     }
+
+    @media (max-width: 920px) {
+      main {
+        grid-template-columns: 1fr;
+        padding-top: 20px;
+      }
+
+      .texto {
+        max-width: 100%;
+      }
+
+      .card {
+        margin-left: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="page">
-    <section class="card" aria-label="Login de destinatário da carga">
-      <div class="brand">
-        <span>🍊</span>
+  <div class="pagina">
+    <header>
+      <button type="button" class="logo" onclick="window.location.href='index.html'" aria-label="Voltar para a página inicial">
+        <span class="logo-icon">🚚</span>
         <span>Frete Conecta</span>
-      </div>
+      </button>
 
-      <h2>Login de destinatário</h2>
-      <p class="subtitulo">Acesso exclusivo para quem vai receber a carga publicada pelo embarcador.</p>
+      <nav aria-label="Menu principal">
+        <a href="index.html">Home</a>
+        <a href="para-destinatarios.html">Para destinatários</a>
+        <a href="para-caminhoneiros.html">Para caminhoneiros</a>
+        <a href="login-embarcadores.html">Embarcadores</a>
+        <a href="login.html" class="btn-primario">Entrar</a>
+      </nav>
+    </header>
 
-      <form onsubmit="return false;">
-        <div class="campo">
-          <label for="email">E-mail ou CPF</label>
-          <div class="input-box">
-            <span class="icone">✉</span>
-            <input type="text" id="email" name="username" autocomplete="username" autocapitalize="off" placeholder="Digite seu e-mail ou CPF" />
+    <main>
+      <section class="texto" aria-label="Mensagem promocional do destino">
+        <div class="tag"><span>✓</span> Acesso seguro e rastreável</div>
+        <h1>Receba suas cargas com <span>mais controle</span> e rapidez.</h1>
+        <p class="descricao">
+          Acompanhe entregas em tempo real, veja os prazos restantes e acesse apenas as cargas que são entregues para você.
+        </p>
+
+        <div class="vantagens">
+          <div class="vantagem">
+            <div class="icone">📦</div>
+            <div>
+              <h3>Visualização clara</h3>
+              <p>Veja e confirme cada entrega sem confusão.</p>
+            </div>
+          </div>
+
+          <div class="vantagem">
+            <div class="icone">⏱️</div>
+            <div>
+              <h3>Prazo em tempo real</h3>
+              <p>Monitore os tempos e receba alertas antes da expiração.</p>
+            </div>
+          </div>
+
+          <div class="vantagem">
+            <div class="icone">🛡️</div>
+            <div>
+              <h3>Segurança no processo</h3>
+              <p>Autenticação simples para quem recebe a carga publicadas.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Login de destinatário da carga">
+        <div class="card-top">
+          <div class="card-logo">
+            <span class="fruta">🚚</span>
+            <span>Frete Conecta</span>
           </div>
         </div>
 
-        <div class="campo">
-          <label for="senha">Senha</label>
-          <div class="input-box">
-            <span class="icone">🔒</span>
-            <input type="password" id="senha" name="password" autocomplete="current-password" placeholder="Digite sua senha" />
-            <button type="button" id="botaoSenha" class="senha-toggle" aria-label="Mostrar senha">👁</button>
+        <h2>Login de destinatário</h2>
+        <p class="subtitulo">Acesso exclusivo para quem vai receber a carga publicada pelo embarcador.</p>
+
+        <form onsubmit="return false;">
+          <div class="campo">
+            <label for="email">E-mail ou CPF</label>
+            <div class="input-box">
+              <span class="icone">✉</span>
+              <input type="text" id="email" name="username" autocomplete="username" autocapitalize="off" placeholder="Digite seu e-mail ou CPF" />
+            </div>
           </div>
-        </div>
 
-        <div class="opcoes">
-          <label class="lembrar"><input type="checkbox" /> Lembrar de mim</label>
-          <span class="esqueceu" onclick="esqueciSenha()">Esqueceu a senha?</span>
-        </div>
+          <div class="campo">
+            <label for="senha">Senha</label>
+            <div class="input-box">
+              <span class="icone">🔒</span>
+              <input type="password" id="senha" name="password" autocomplete="current-password" placeholder="Digite sua senha" />
+              <button type="button" id="botaoSenha" class="senha-toggle" aria-label="Mostrar senha">👁</button>
+            </div>
+          </div>
 
-        <button class="btn-login" type="button" onclick="entrarDestinatario()">Entrar como destinatário</button>
+          <div class="opcoes">
+            <label class="lembrar"><input type="checkbox" /> Lembrar de mim</label>
+            <span class="esqueceu" onclick="esqueciSenha()">Esqueceu a senha?</span>
+          </div>
 
-        <button class="btn-secundario" type="button" onclick="window.location.href='cadastro-destinatario.html'">Criar conta de destinatário</button>
+          <button class="btn-login" type="button" onclick="entrarDestinatario()">Entrar como destinatário</button>
 
-        <div class="links-rapidos">
-          <p>Outros acessos</p>
-          <a href="login.html">Login de caminhoneiros</a>
-          <a href="login-embarcadores.html">Login de embarcadores</a>
-        </div>
+          <button class="btn-secundario" type="button" onclick="window.location.href='cadastro-destinatario.html'">Criar conta de destinatário</button>
 
-        <div id="mensagem" class="mensagem"></div>
-      </form>
-    </section>
+          <div class="links-rapidos">
+            <p>Outros acessos</p>
+            <a href="login.html">Login de caminhoneiros</a>
+            <a href="login-embarcadores.html">Login de embarcadores</a>
+          </div>
+
+          <div id="mensagem" class="mensagem"></div>
+        </form>
+      </section>
+    </main>
   </div>
 
   <script src="auth.js"></script>
