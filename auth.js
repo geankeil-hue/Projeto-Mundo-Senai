@@ -515,6 +515,10 @@
       'motorista aceitou a entrega': 'aceita',
       'motorista aceitou': 'aceita',
       'aceita': 'aceita',
+      'corrida iniciada': 'em_corrida',
+      'carga em corrida': 'em_corrida',
+      'em corrida': 'em_corrida',
+      'em_corrida': 'em_corrida',
       'motorista a caminho da retirada': 'retirada',
       'a caminho da retirada': 'retirada',
       'retirada': 'retirada',
@@ -529,6 +533,9 @@
       'entrega finalizada pelo motorista': 'entrega_finalizada',
       'entrega finalizada': 'entrega_finalizada',
       'finalizada': 'entrega_finalizada',
+      'carga expirada': 'expirada',
+      'expirada': 'expirada',
+      'prazo expirado': 'expirada',
       'recebimento confirmado pelo destinatario': 'recebimento_confirmado',
       'recebimento confirmado': 'recebimento_confirmado',
       'confirmado': 'recebimento_confirmado'
@@ -541,13 +548,15 @@
     return [
       { key: 'publicada', label: 'CARGA PUBLICADA', order: 1 },
       { key: 'aceita', label: 'MOTORISTA ACEITOU A ENTREGA', order: 2 },
-      { key: 'retirada', label: 'MOTORISTA A CAMINHO DA RETIRADA', order: 3 },
-      { key: 'retirada_confirmada', label: 'MOTORISTA CHEGOU AO LOCAL DE RETIRADA', order: 4 },
-      { key: 'coletada', label: 'CARGA COLETADA', order: 5 },
-      { key: 'em_transporte', label: 'EM TRANSPORTE', order: 6 },
-      { key: 'destino_alcancado', label: 'MOTORISTA CHEGOU AO DESTINO', order: 7 },
-      { key: 'entrega_finalizada', label: 'ENTREGA FINALIZADA PELO MOTORISTA', order: 8 },
-      { key: 'recebimento_confirmado', label: 'RECEBIMENTO CONFIRMADO PELO DESTINATÁRIO', order: 9 }
+      { key: 'em_corrida', label: 'CORRIDA INICIADA', order: 3 },
+      { key: 'retirada', label: 'MOTORISTA A CAMINHO DA RETIRADA', order: 4 },
+      { key: 'retirada_confirmada', label: 'MOTORISTA CHEGOU AO LOCAL DE RETIRADA', order: 5 },
+      { key: 'coletada', label: 'CARGA COLETADA', order: 6 },
+      { key: 'em_transporte', label: 'EM TRANSPORTE', order: 7 },
+      { key: 'destino_alcancado', label: 'MOTORISTA CHEGOU AO DESTINO', order: 8 },
+      { key: 'entrega_finalizada', label: 'ENTREGA FINALIZADA PELO MOTORISTA', order: 9 },
+      { key: 'recebimento_confirmado', label: 'RECEBIMENTO CONFIRMADO PELO DESTINATÁRIO', order: 10 },
+      { key: 'expirada', label: 'CARGA EXPIRADA', order: 11 }
     ];
   }
 
@@ -1426,15 +1435,83 @@
     getCargasDisponiveis() {
       return this.getCargas().filter((carga) => {
         const status = normalizeStatusKey(carga.status || 'publicada');
-        return status === 'publicada' || status === 'aceita' || status === 'retirada' || status === 'retirada_confirmada' || status === 'coletada' || status === 'em_transporte' || status === 'destino_alcancado' || status === 'entrega_finalizada';
+        return status !== 'expirada' && status !== 'cancelada' && status !== 'recebimento_confirmado';
       });
+    },
+    getCargasDoEmbarcador(usuarioId) {
+      const usuario = usuarioId || this.currentUser()?.id;
+      if (!usuario) {
+        return [];
+      }
+      return this.getCargas().filter((carga) => {
+        if (String(carga.userId || '') !== String(usuario)) {
+          return false;
+        }
+        const status = normalizeStatusKey(carga.status || 'publicada');
+        return status !== 'cancelada';
+      });
+    },
+    getCargaPrazo(carga) {
+      const valor = carga && (carga.expiraEm || carga.prazoEntrega || carga.aceitaEm || carga.createdAt);
+      if (!valor) return null;
+      const timestamp = new Date(valor).getTime();
+      return Number.isFinite(timestamp) ? timestamp : null;
+    },
+    expirarCargasAtrasadas() {
+      const expiradasReal = readCargas().map((carga) => {
+        const status = normalizeStatusKey(carga.status || 'publicada');
+        const prazo = this.getCargaPrazo(carga);
+        if (!prazo || !['aceita', 'retirada', 'retirada_confirmada', 'coletada', 'em_transporte', 'destino_alcancado', 'em_corrida'].includes(status)) {
+          return carga;
+        }
+
+        if (Date.now() > prazo) {
+          return {
+            ...carga,
+            status: 'expirada',
+            expiradaEm: new Date().toISOString(),
+            historico: pushHistorico(carga, 'expirada', carga.caminhoneiroId || carga.userId || 'sistema', carga.caminhoneiroNome || 'Sistema', { motivo: 'Prazo de entrega expirado' })
+          };
+        }
+
+        return carga;
+      });
+
+      const expiradasDemo = readJSON('freteConectaDemoCargas', []).map((carga) => {
+        const status = normalizeStatusKey(carga.status || 'publicada');
+        const prazo = this.getCargaPrazo(carga);
+        if (!prazo || !['aceita', 'retirada', 'retirada_confirmada', 'coletada', 'em_transporte', 'destino_alcancado', 'em_corrida'].includes(status)) {
+          return carga;
+        }
+
+        if (Date.now() > prazo) {
+          return {
+            ...carga,
+            status: 'expirada',
+            expiradaEm: new Date().toISOString(),
+            historico: pushHistorico(carga, 'expirada', carga.caminhoneiroId || carga.userId || 'sistema', carga.caminhoneiroNome || 'Sistema', { motivo: 'Prazo de entrega expirado' })
+          };
+        }
+
+        return carga;
+      });
+
+      writeCargas(expiradasReal);
+      writeJSON('freteConectaDemoCargas', expiradasDemo);
+      return expiradasReal.concat(expiradasDemo).filter((carga) => normalizeStatusKey(carga.status || 'publicada') === 'expirada').length;
     },
     getCargasDoCaminhoneiro(usuarioId) {
       const usuario = usuarioId || this.currentUser()?.id;
       if (!usuario) {
         return [];
       }
-      return this.getCargas().filter((carga) => String(carga.caminhoneiroId) === String(usuario));
+      return this.getCargas().filter((carga) => {
+        if (String(carga.caminhoneiroId) !== String(usuario)) {
+          return false;
+        }
+        const status = normalizeStatusKey(carga.status || 'publicada');
+        return ['aceita', 'retirada', 'retirada_confirmada', 'coletada', 'em_corrida', 'em_transporte', 'destino_alcancado', 'entrega_finalizada'].includes(status);
+      });
     },
     getNotificacoes(userId) {
       const targetId = userId || this.currentUser()?.id;
@@ -2261,6 +2338,7 @@
       const permitidoPara = {
         'publicada': ['embarcador'],
         'aceita': ['caminhoneiro'],
+        'em_corrida': ['caminhoneiro'],
         'retirada': ['caminhoneiro'],
         'retirada_confirmada': ['caminhoneiro'],
         'coletada': ['caminhoneiro'],
@@ -2378,6 +2456,7 @@
         throw new Error('Não é possível assumir uma entrega que já foi concluída.');
       }
 
+      const prazoEntrega = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
       const atualizada = {
         ...carga,
         status: 'aceita',
@@ -2385,6 +2464,8 @@
         caminhoneiroNome: usuario.nome || usuario.email,
         transportador: usuario.nome || usuario.email,
         aceitaEm: new Date().toISOString(),
+        expiraEm: prazoEntrega,
+        prazoEntrega: prazoEntrega,
         historico: pushHistorico(carga, 'aceita', usuario.id, usuario.nome || usuario.email)
       };
 
@@ -2397,6 +2478,50 @@
       }
 
       addNotification(carga.userId, { tipo: 'carga_aceita', cargaId: carga.id, mensagem: `${usuario.nome || 'Caminhoneiro'} aceitou a carga.` });
+      return atualizada;
+    },
+    updateCargaValor(cargaId, novoValor, userIdOverride) {
+      const usuario = userIdOverride ? resolveUserById(userIdOverride) || this.currentUser() : this.currentUser();
+      if (!usuario) {
+        throw new Error('Faça login para alterar o valor da carga.');
+      }
+      if (usuario.role !== 'embarcador') {
+        throw new Error('Apenas embarcadores podem alterar o valor da carga.');
+      }
+
+      const carga = this.getCargas().find((item) => String(item.id) === String(cargaId));
+      if (!carga) {
+        throw new Error('Carga não encontrada.');
+      }
+      if (String(carga.userId) !== String(usuario.id)) {
+        throw new Error('Você só pode editar cargas publicadas por sua conta.');
+      }
+
+      const valorText = String(novoValor ?? '').trim();
+      if (!valorText) {
+        throw new Error('Informe um valor válido para a carga.');
+      }
+
+      const valorNumerico = parseCurrency(valorText);
+      const taxaPlataforma = Number((valorNumerico * 0.05).toFixed(2));
+      const valorLiquido = Number((valorNumerico - taxaPlataforma).toFixed(2));
+
+      const storageKey = carga.userId && resolveUserById(carga.userId)?.isDemo ? 'freteConectaDemoCargas' : 'freteConectaCargas';
+      const lista = readJSON(storageKey, []);
+      const index = lista.findIndex((item) => String(item.id) === String(carga.id));
+      const atualizada = {
+        ...carga,
+        valor: valorText,
+        taxaPlataforma,
+        valorLiquido,
+        historico: pushHistorico(carga, 'valor_atualizado', usuario.id, usuario.nome || usuario.email, { valorAnterior: carga.valor || '', valorNovo: valorText })
+      };
+
+      if (index >= 0) {
+        lista[index] = atualizada;
+        writeJSON(storageKey, lista);
+      }
+
       return atualizada;
     },
     cancelCarga(cargaId, motivo = 'Cancelada pelo usuário', userIdOverride) {
@@ -2435,7 +2560,22 @@
       }
 
       const motivoFinal = String(typeof motivo === 'string' ? motivo : 'Cancelada pelo usuário').trim() || 'Cancelada pelo usuário';
-      const atualizada = {
+      const atualizada = isDriver ? {
+        ...carga,
+        status: 'publicada',
+        caminhoneiroId: '',
+        caminhoneiroNome: '',
+        transportador: '',
+        aceitaEm: '',
+        expiraEm: '',
+        prazoEntrega: '',
+        corridaIniciadaEm: '',
+        corridaConfirmadaPor: '',
+        canceladaPor: usuario.id,
+        motivoCancelamento: motivoFinal,
+        canceladaEm: new Date().toISOString(),
+        historico: Array.isArray(carga.historico) ? [...carga.historico, { evento: 'cancelada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email, motivo: motivoFinal, tipo: 'cancelamento_motorista' }] : [{ evento: 'cancelada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email, motivo: motivoFinal, tipo: 'cancelamento_motorista' }]
+      } : {
         ...carga,
         status: 'cancelada',
         canceladaPor: usuario.id,
@@ -2477,11 +2617,14 @@
         throw new Error('Esta carga precisa estar aceita para iniciar a corrida.');
       }
 
+      const prazoEntrega = carga.expiraEm || carga.prazoEntrega || new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
       const atualizada = {
         ...carga,
         status: 'em_corrida',
         corridaIniciadaEm: new Date().toISOString(),
         corridaConfirmadaPor: usuario.id,
+        expiraEm: prazoEntrega,
+        prazoEntrega: prazoEntrega,
         historico: Array.isArray(carga.historico) ? [...carga.historico, { evento: 'confirmada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email }] : [{ evento: 'confirmada', data: new Date().toISOString(), usuarioId: usuario.id, usuarioNome: usuario.nome || usuario.email }]
       };
 

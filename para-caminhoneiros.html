@@ -1577,7 +1577,88 @@
             btnAreaPadrao.addEventListener('click', aplicarAreaPadrao);
         }
 
+        function formatarPrazoRestante(expiraEm) {
+            if (!expiraEm) {
+                return 'Prazo não definido';
+            }
+
+            const destino = new Date(expiraEm).getTime();
+            const agora = Date.now();
+            const restante = Math.max(0, destino - agora);
+            const totalSegundos = Math.floor(restante / 1000);
+            const horas = String(Math.floor(totalSegundos / 3600)).padStart(2, '0');
+            const minutos = String(Math.floor((totalSegundos % 3600) / 60)).padStart(2, '0');
+            const segundos = String(totalSegundos % 60).padStart(2, '0');
+
+            return `${horas}:${minutos}:${segundos}`;
+        }
+
+        function getStatusCarga(carga) {
+            const statusAtual = String(carga?.status || '').toLowerCase();
+            const expiraEm = carga?.expiraEm || carga?.prazoEntrega;
+            const expirou = !!expiraEm && Date.now() > new Date(expiraEm).getTime();
+
+            if (statusAtual === 'expirada' || expirou) {
+                return {
+                    texto: 'Carga expirada',
+                    contador: 'Expirada',
+                    expirou: true,
+                    botao: 'Carga expirada',
+                    desabilitado: true
+                };
+            }
+
+            if (statusAtual === 'em_corrida') {
+                return {
+                    texto: 'Corrida iniciada',
+                    contador: expiraEm ? `Prazo: ${formatarPrazoRestante(expiraEm)}` : 'Prazo: em análise',
+                    expirou: false,
+                    botao: 'Corrida confirmada',
+                    desabilitado: true
+                };
+            }
+
+            return {
+                texto: 'Carga aceita',
+                contador: expiraEm ? `Entrega em: ${formatarPrazoRestante(expiraEm)}` : 'Prazo: em análise',
+                expirou: false,
+                botao: 'Confirmar corrida',
+                desabilitado: false
+            };
+        }
+
+        function atualizarContadoresCargas() {
+            const cards = document.querySelectorAll('.dashboard .offer[data-carga-id]');
+            if (!cards.length) {
+                return;
+            }
+
+            const usuario = FreteConectaAuth.currentUser();
+            const minhasCargas = FreteConectaAuth.getCargasDoCaminhoneiro(usuario ? usuario.id : null);
+            const mapaCargas = new Map(minhasCargas.map((carga) => [String(carga.id), carga]));
+
+            cards.forEach((card) => {
+                const id = card.dataset.cargaId;
+                const carga = mapaCargas.get(String(id));
+                const contador = card.querySelector('.countdown-value');
+                if (!contador || !carga) {
+                    return;
+                }
+
+                const statusInfo = getStatusCarga(carga);
+                contador.textContent = statusInfo.contador;
+                contador.style.color = statusInfo.expirou ? '#b42318' : '#0f766e';
+                const botao = card.querySelector('.confirmar-carga-btn');
+                if (botao) {
+                    botao.disabled = statusInfo.desabilitado;
+                    botao.textContent = statusInfo.botao;
+                }
+            });
+        }
+
         function renderCargasDisponiveis() {
+            FreteConectaAuth.expirarCargasAtrasadas?.();
+
             const dashboard = document.querySelector('.dashboard');
             if (!dashboard) {
                 return;
@@ -1589,6 +1670,9 @@
             const totalMinhasCargas = minhasCargas.length;
             const cards = document.querySelectorAll('.dashboard .offer');
             cards.forEach((card) => card.remove());
+
+            const titulosExistentes = document.querySelectorAll('.dashboard .empty-offers');
+            titulosExistentes.forEach((titulo) => titulo.remove());
 
             renderGpsCorridaAtiva();
 
@@ -1612,10 +1696,10 @@
                 minhasCargas.forEach((carga) => {
                     const card = document.createElement('div');
                     card.className = 'offer';
-                    const statusLabel = carga.status === 'em_corrida' ? 'Corrida iniciada' : 'Carga aceita';
-                    const botaoLabel = carga.status === 'em_corrida' ? 'Corrida confirmada' : 'Confirmar corrida';
-                    const disabled = carga.status === 'em_corrida' ? 'disabled' : '';
+                    const statusInfo = getStatusCarga(carga);
                     const podeCancelar = ['em_corrida', 'retirada', 'retirada_confirmada', 'coletada', 'em_transporte', 'destino_alcancado'].includes(String(carga.status || ''));
+                    const botaoLabel = statusInfo.botao;
+                    const disabled = statusInfo.desabilitado ? 'disabled' : '';
 
                     card.innerHTML = `
                         <div class="offer-left">
@@ -1632,11 +1716,13 @@
                         </div>
                         <div class="offer-right">
                             <div class="price">${formatCurrency(Number(String(carga.valor).replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0)}</div>
-                            <div class="verified">✓ ${statusLabel}</div>
+                            <div class="verified">✓ ${statusInfo.texto}</div>
+                            <div class="countdown-value" data-carga-id="${carga.id}" style="margin: 8px 0; color: ${statusInfo.expirou ? '#b42318' : '#0f766e'}; font-weight: 700; font-size: 0.9rem;">${statusInfo.contador}</div>
                             <button type="button" class="confirmar-carga-btn" data-carga-id="${carga.id}" ${disabled}>${botaoLabel}</button>
                             ${podeCancelar ? `<button type="button" class="cancelar-corrida-btn" data-carga-id="${carga.id}" style="margin-top:8px; background:#fff5f5; border:1px solid #f87171; color:#b42318;">Cancelar corrida</button>` : ''}
                         </div>
                     `;
+                    card.dataset.cargaId = String(carga.id);
                     dashboard.appendChild(card);
                 });
             }
@@ -1726,6 +1812,12 @@
                     }
                 });
             });
+        }
+
+        if (!window.__freteConectaCountdownTimer) {
+            window.__freteConectaCountdownTimer = setInterval(() => {
+                atualizarContadoresCargas();
+            }, 1000);
         }
 
         renderCargasDisponiveis();

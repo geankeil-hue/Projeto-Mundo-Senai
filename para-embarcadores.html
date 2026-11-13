@@ -1333,7 +1333,11 @@
                 return;
             }
 
-            const minhasCargas = getCargas().filter((carga) => carga.userId === usuario.id || carga.userEmail === usuario.email);
+            const minhasCargas = getCargas().filter((carga) => {
+                const mesmoUsuario = carga.userId === usuario.id || carga.userEmail === usuario.email;
+                const status = String(carga.status || 'publicada').trim().toLowerCase();
+                return mesmoUsuario && status !== 'cancelada';
+            });
             const totalTaxaSite = minhasCargas.reduce((total, carga) => {
                 const valorFrete = parseCurrencyValue(carga.valor);
                 const taxaSite = Number(carga.taxaPlataforma || (valorFrete * 0.05));
@@ -1358,6 +1362,9 @@
                 const valorLiquido = Number(carga.valorLiquido || (valorFrete - taxaSite));
                 const dataTexto = carga.data ? new Date(carga.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada';
                 const observacoes = escapeHtml(carga.observacoes || '');
+                const status = String(carga.status || 'publicada');
+                const podeEditar = status === 'publicada';
+                const podeCancelar = status !== 'cancelada' && status !== 'entrega_finalizada' && status !== 'recebimento_confirmado';
 
                 return `
                     <article class="carga-card">
@@ -1375,11 +1382,63 @@
                             <div><strong>Peso:</strong> ${escapeHtml(carga.peso || '-')}</div>
                             <div><strong>Data:</strong> ${escapeHtml(dataTexto)}</div>
                             <div><strong>Valor líquido do embarcador:</strong> ${escapeHtml(formatCurrency(valorLiquido))}</div>
+                            <div><strong>Status:</strong> ${escapeHtml(status === 'cancelada' ? 'Cancelada' : status === 'publicada' ? 'Ativa' : status)}</div>
                             ${observacoes ? `<div><strong>Obs:</strong> ${observacoes}</div>` : ''}
+                        </div>
+                        <div class="carga-actions" style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                            ${podeEditar ? `<button type="button" class="btn btn-small btn-edit-valor" data-carga-id="${carga.id}">Editar valor</button>` : '<button type="button" class="btn btn-small" disabled>Editar valor</button>'}
+                            ${podeCancelar ? `<button type="button" class="btn btn-small btn-cancelar-publicacao" data-carga-id="${carga.id}">Cancelar publicação</button>` : '<button type="button" class="btn btn-small" disabled>Cancelar publicação</button>'}
                         </div>
                     </article>
                 `;
             }).join('');
+
+            document.querySelectorAll('.btn-edit-valor').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const id = button.dataset.cargaId;
+                    const carga = getCargas().find((item) => String(item.id) === String(id));
+                    if (!carga) {
+                        return;
+                    }
+                    const novoValor = window.prompt('Digite o novo valor da carga:', carga.valor || '');
+                    if (novoValor === null) {
+                        return;
+                    }
+                    if (!String(novoValor).trim()) {
+                        alert('Informe um valor válido.');
+                        return;
+                    }
+                    try {
+                        FreteConectaAuth.updateCargaValor(id, novoValor, FreteConectaAuth.currentUser()?.id);
+                        renderCargas();
+                        alert('✅ Valor da carga atualizado com sucesso.');
+                    } catch (erro) {
+                        alert('⚠️ ' + erro.message);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-cancelar-publicacao').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const id = button.dataset.cargaId;
+                    const usuario = FreteConectaAuth.currentUser();
+                    if (!usuario) {
+                        window.location.href = 'login-embarcadores.html';
+                        return;
+                    }
+                    const confirmar = window.confirm('Deseja cancelar a publicação desta carga?');
+                    if (!confirmar) {
+                        return;
+                    }
+                    try {
+                        FreteConectaAuth.cancelCarga(id, 'Publicação cancelada pelo embarcador', usuario.id);
+                        renderCargas();
+                        alert('✅ Publicação cancelada com sucesso.');
+                    } catch (erro) {
+                        alert('⚠️ ' + erro.message);
+                    }
+                });
+            });
         }
 
         if (cargoForm) {

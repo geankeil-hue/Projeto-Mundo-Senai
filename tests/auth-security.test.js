@@ -161,8 +161,9 @@ test('cancelamento exige permissão do embarcador ou do motorista responsável',
   auth.acceptCarga(carga.id);
 
   const cancelled = auth.cancelCarga(carga.id, 'Falha operacional');
-  assert.equal(cancelled.status, 'cancelada');
+  assert.equal(cancelled.status, 'publicada');
   assert.equal(cancelled.motivoCancelamento, 'Falha operacional');
+  assert.equal(cancelled.caminhoneiroId, '');
 });
 
 test('motorista pode cancelar corrida em andamento, mas não depois da entrega finalizada', () => {
@@ -203,8 +204,9 @@ test('motorista pode cancelar corrida em andamento, mas não depois da entrega f
   auth.confirmCarga(carga.id);
 
   const canceladaEmAndamento = auth.cancelCarga(carga.id, 'Problema de logística');
-  assert.equal(canceladaEmAndamento.status, 'cancelada');
+  assert.equal(canceladaEmAndamento.status, 'publicada');
   assert.equal(canceladaEmAndamento.canceladaPor, motorista.id);
+  assert.equal(canceladaEmAndamento.caminhoneiroId, '');
 
   auth.login('norte@empresa.com', 'Senha123', 'embarcador');
   const novaCarga = auth.publishCarga({
@@ -224,4 +226,194 @@ test('motorista pode cancelar corrida em andamento, mas não depois da entrega f
   auth.atualizarStatusEntrega(novaCarga.id, 'entrega_finalizada');
 
   assert.throws(() => auth.cancelCarga(novaCarga.id, 'Tentativa indevida'), /finalizada|entreg/i);
+});
+
+test('confirmação da corrida registra status em_corrida e mantém o fluxo válido', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'emb-100',
+    nome: 'Embarcador Atual',
+    email: 'embarcador@teste.com',
+    role: 'embarcador'
+  }));
+
+  const carga = auth.publishCarga({
+    origem: 'São Paulo / SP',
+    destino: 'Curitiba / PR',
+    tipo: 'Grãos',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '6 t',
+    data: '2026-12-20',
+    valor: 'R$ 3.100,00',
+    observacoes: 'Validação da corrida após confirmação'
+  });
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'cam-100',
+    nome: 'Motorista Atual',
+    email: 'motorista@teste.com',
+    role: 'caminhoneiro'
+  }));
+
+  auth.acceptCarga(carga.id);
+  const confirmada = auth.confirmCarga(carga.id);
+  assert.equal(confirmada.status, 'em_corrida');
+  assert.doesNotThrow(() => auth.atualizarStatusEntrega(carga.id, 'em_transporte', 'cam-100'));
+
+  const atualizada = auth.getCargas().find((item) => String(item.id) === String(carga.id));
+  assert.equal(atualizada.status, 'em_transporte');
+});
+
+test('motorista pode cancelar a corrida e aceitar a carga novamente', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'emb-cancelar',
+    nome: 'Embarcador Cancelar',
+    email: 'cancelar@teste.com',
+    role: 'embarcador'
+  }));
+
+  const carga = auth.publishCarga({
+    origem: 'Florianópolis / SC',
+    destino: 'Joinville / SC',
+    tipo: 'Eletrônicos',
+    regiaoOrigem: 'Sul',
+    regiaoPublicacao: 'Sul',
+    peso: '6 t',
+    data: '2026-11-18',
+    valor: 'R$ 2.800,00',
+    observacoes: 'Teste de cancelamento e reaceite'
+  });
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'cam-cancelar',
+    nome: 'Motorista Cancelar',
+    email: 'motorista-cancelar@teste.com',
+    role: 'caminhoneiro'
+  }));
+
+  auth.acceptCarga(carga.id);
+  auth.cancelCarga(carga.id, 'Cancelamento do motorista');
+
+  const cancelada = auth.getCargas().find((item) => String(item.id) === String(carga.id));
+  assert.equal(cancelada.status, 'publicada');
+  assert.equal(cancelada.caminhoneiroId, '');
+  assert.doesNotThrow(() => auth.acceptCarga(carga.id));
+  assert.equal(auth.getCargas().find((item) => String(item.id) === String(carga.id)).status, 'aceita');
+});
+
+test('embarcador pode editar o valor da carga e cancelar a publicação', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'emb-editar',
+    nome: 'Embarcador Editar',
+    email: 'editar@teste.com',
+    role: 'embarcador'
+  }));
+
+  const carga = auth.publishCarga({
+    origem: 'Porto Alegre / RS',
+    destino: 'Curitiba / PR',
+    tipo: 'Carga seca',
+    regiaoOrigem: 'Sul',
+    regiaoPublicacao: 'Sul',
+    peso: '4 t',
+    data: '2026-11-22',
+    valor: 'R$ 3.000,00',
+    observacoes: 'Carga de teste'
+  });
+
+  const atualizada = auth.updateCargaValor(carga.id, 'R$ 3.500,00');
+  assert.equal(atualizada.valor, 'R$ 3.500,00');
+
+  const cancelada = auth.cancelCarga(carga.id, 'Publicação cancelada pelo embarcador');
+  assert.equal(cancelada.status, 'cancelada');
+  assert.equal(cancelada.motivoCancelamento, 'Publicação cancelada pelo embarcador');
+});
+
+test('carga cancelada não aparece mais na lista de cargas do embarcador', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'emb-lista',
+    nome: 'Embarcador Lista',
+    email: 'lista@teste.com',
+    role: 'embarcador'
+  }));
+
+  const carga = auth.publishCarga({
+    origem: 'Rio / RJ',
+    destino: 'Niterói / RJ',
+    tipo: 'Móveis',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '2 t',
+    data: '2026-11-30',
+    valor: 'R$ 1.800,00',
+    observacoes: 'Teste de remoção da lista'
+  });
+
+  auth.cancelCarga(carga.id, 'Publicação cancelada pelo embarcador');
+
+  const lista = auth.getCargasDoEmbarcador('emb-lista');
+  assert.equal(lista.some((item) => String(item.id) === String(carga.id)), false);
+  assert.equal(lista.length >= 0, true);
+});
+
+test('carga aceita expira automaticamente quando o prazo termina', () => {
+  const sandbox = createAuthSandbox();
+  const auth = sandbox.window.FreteConectaAuth;
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'emb-99',
+    nome: 'Embarcador Teste',
+    email: 'embarcador@teste.com',
+    role: 'embarcador'
+  }));
+
+  const carga = auth.publishCarga({
+    origem: 'São Paulo / SP',
+    destino: 'Curitiba / PR',
+    tipo: 'Grãos',
+    regiaoOrigem: 'Sudeste',
+    regiaoPublicacao: 'Sudeste',
+    peso: '6 t',
+    data: '2026-12-20',
+    valor: 'R$ 3.100,00',
+    observacoes: 'Prazo de entrega crítico'
+  });
+
+  sandbox.localStorage.setItem('freteConectaCurrentUser', JSON.stringify({
+    id: 'cam-99',
+    nome: 'Motorista Prazo',
+    email: 'prazo@teste.com',
+    role: 'caminhoneiro'
+  }));
+
+  const aceita = auth.acceptCarga(carga.id);
+  assert.ok(aceita.expiraEm, 'deve registrar uma data de expiração');
+
+  const cargas = auth.getCargas();
+  const alvo = cargas.find((item) => String(item.id) === String(carga.id));
+  alvo.expiraEm = new Date(Date.now() - 1000).toISOString();
+
+  auth.updateCargaStorage ? auth.updateCargaStorage(alvo) : (() => {
+    const storageKey = 'freteConectaCargas';
+    const lista = JSON.parse(sandbox.localStorage.getItem(storageKey) || '[]');
+    const index = lista.findIndex((item) => String(item.id) === String(carga.id));
+    lista[index] = alvo;
+    sandbox.localStorage.setItem(storageKey, JSON.stringify(lista));
+  })();
+
+  const expiradas = auth.expirarCargasAtrasadas();
+  assert.equal(expiradas, 1);
+  assert.equal(auth.getCargas().find((item) => String(item.id) === String(carga.id)).status, 'expirada');
 });

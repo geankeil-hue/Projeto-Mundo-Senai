@@ -320,6 +320,61 @@
       localStorage.setItem(STORAGE_KEY, normalizedId);
     }
 
+    function formatarTempoRestante(dataAlvo) {
+      if (!dataAlvo) {
+        return 'Prazo em análise';
+      }
+
+      const destino = new Date(dataAlvo).getTime();
+      const agora = Date.now();
+      const restante = Math.max(0, destino - agora);
+      const totalSegundos = Math.floor(restante / 1000);
+      const dias = Math.floor(totalSegundos / 86400);
+      const horas = Math.floor((totalSegundos % 86400) / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      const segundos = totalSegundos % 60;
+
+      if (!totalSegundos) {
+        return 'Entrega em atraso';
+      }
+
+      const partes = [];
+      if (dias) partes.push(`${dias}d`);
+      if (horas || dias) partes.push(`${String(horas).padStart(2, '0')}h`);
+      partes.push(`${String(minutos).padStart(2, '0')}m`);
+      partes.push(`${String(segundos).padStart(2, '0')}s`);
+
+      return partes.join(' ');
+    }
+
+    function getStatusEntrega(carga) {
+      if (!carga) {
+        return { texto: 'Nenhuma entrega selecionada', tempo: '—' };
+      }
+
+      const status = String(carga.status || 'publicada').toLowerCase();
+      const prazo = carga.expiraEm || carga.prazoEntrega;
+      const expirou = !!prazo && Date.now() > new Date(prazo).getTime();
+
+      if (status === 'cancelada') {
+        return { texto: 'Carga cancelada', tempo: 'Entrega cancelada' };
+      }
+
+      if (status === 'expirada' || expirou) {
+        return { texto: 'Entrega atrasada', tempo: 'Prazo expirado' };
+      }
+
+      if (status === 'entrega_finalizada' || status === 'recebimento_confirmado') {
+        return { texto: 'Entrega concluída', tempo: 'Concluída' };
+      }
+
+      if (prazo) {
+        return { texto: 'Enviada para o destino', tempo: formatarTempoRestante(prazo) };
+      }
+
+      return { texto: 'Aguardando confirmação do transporte', tempo: 'Prazo em análise' };
+    }
+
     function getCardMarkup(carga, isSelected) {
       return `
         <article class="entrega-card ${isSelected ? 'selected' : ''}">
@@ -351,6 +406,20 @@
       `;
     }
 
+    function getCorPrazo(carga) {
+      const prazo = carga?.expiraEm || carga?.prazoEntrega;
+      if (!prazo) {
+        return '#5c6b7a';
+      }
+
+      const restante = new Date(prazo).getTime() - Date.now();
+      const horasRestantes = restante / (1000 * 60 * 60);
+
+      if (restante <= 0) return '#b42318';
+      if (horasRestantes <= 12) return '#d97706';
+      return '#15803d';
+    }
+
     function renderSelectedSummary(carga) {
       const container = document.getElementById('resumo-selecionado');
       if (!carga) {
@@ -358,6 +427,8 @@
         return;
       }
 
+      const statusInfo = getStatusEntrega(carga);
+      const corPrazo = getCorPrazo(carga);
       container.innerHTML = `
         <div><strong>Carga:</strong> ${carga.tipo || 'Carga'}</div>
         <div><strong>Origem:</strong> ${carga.origem || '—'}</div>
@@ -365,6 +436,10 @@
         <div><strong>Peso:</strong> ${carga.peso || '—'}</div>
         <div><strong>Valor:</strong> ${carga.valor || 'R$ 0,00'}</div>
         <div><strong>Data de entrega:</strong> ${formatDate(carga.data)}</div>
+        <div><strong>Status:</strong> ${statusInfo.texto}</div>
+        <div style="display:inline-block; padding:8px 12px; border-radius:999px; background:${corPrazo}1a; color:${corPrazo}; font-weight:bold; border:1px solid ${corPrazo}55;">
+          <strong>Tempo restante:</strong> ${statusInfo.tempo}
+        </div>
         <div><strong>Observações:</strong> ${carga.observacoes || 'Nenhuma observação adicional.'}</div>
       `;
     }
@@ -393,7 +468,22 @@
       });
     }
 
+    function atualizarResumoTempoReal() {
+      const selectedId = getSelectedId();
+      if (!selectedId) {
+        return;
+      }
+
+      const carga = FreteConectaAuth.getCargas().find((item) => String(item.id) === String(selectedId));
+      if (!carga) {
+        return;
+      }
+
+      renderSelectedSummary(carga);
+    }
+
     renderEntregas();
+    setInterval(atualizarResumoTempoReal, 1000);
   </script>
 </body>
 </html>
